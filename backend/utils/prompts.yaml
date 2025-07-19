@@ -1,0 +1,56 @@
+gemini:
+  practice_questions:
+    prompt: |
+      Generate {num_questions} practice questions about {topic}.
+      Each question should:
+      - Be clear and concise
+      - Cover key concepts
+      - Include the correct answer
+      - Vary in difficulty
+      Format each question with:
+      1. Question
+      2. Answer
+  notes:
+    prompt: |
+      <Instructions>
+        You are a senior domain expert in <Topic>{topic}</Topic>.  
+        Your task is to generate comprehensive, structured notes in **strictly valid XML** based on the provided context.  
+        **Do not** include any explanation or text outside of the `<Notes>` root element.
+      </Instructions>
+
+      <Schema>
+        <Notes>
+          <Objective>...</Objective>
+          <Context>...</Context>
+          <Overview>...</Overview>
+          <KeyConcepts>
+            <Concept name="..." definition="..."/>
+            <!-- Repeat for each key concept -->
+          </KeyConcepts>
+          <DetailedNotes>
+            <Section title="...">
+              <Description>...</Description>
+              <Examples>
+                <Example>...</Example>
+                <!-- Repeat for each example -->
+              </Examples>
+            </Section>
+            <!-- Repeat for each logical section -->
+          </DetailedNotes>
+          <Summary>...</Summary>
+        </Notes>
+      </Schema>
+
+      <Requirements>
+        <Overview maxWords="100">A concise introduction to the topic.</Overview>
+        <KeyConcepts minItems="3">List and define at least three foundational concepts.</KeyConcepts>
+        <DetailedNotes sections="3-7">
+          Break the context into 3–7 titled sections, each with a description and at least one example.
+        </DetailedNotes>
+        <Summary maxWords="50">A brief recap of the most important points.</Summary>
+        <OutputFormat>Valid XML only—no markdown, no comments, no prose.</OutputFormat>
+      </Requirements>
+
+      <Context>
+        {context}
+      </Context>
