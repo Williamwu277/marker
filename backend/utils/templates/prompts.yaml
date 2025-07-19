@@ -1,0 +1,16 @@
+gemini:
+  practice_questions:
+    prompt: |
+      Generate {num_questions} practice questions about {topic}.
+      Each question should:
+      - Be clear and concise
+      - Cover key concepts
+      - Include the correct answer
+      - Vary in difficulty
+      Format each question with:
+      1. Question
+      2. Answer
+  notes:
+    prompt: |
+      Generate 1 paragraph about {topic}.
+      
