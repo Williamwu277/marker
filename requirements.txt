@@ -3,3 +3,8 @@ langchain
 langchain_community
 faiss
 numpy
+google-cloud-vision
+pdf2image
+dotenv
+flask
+flask-cors
