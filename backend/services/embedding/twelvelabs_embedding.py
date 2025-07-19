@@ -58,8 +58,8 @@ if __name__ == "__main__":
     embedder.embedding_object = embedder.client.embed.task.retrieve(embedder.embedding_object.id)
     
     embeddings = embedder.retrieve_embeddings(["audio"]) # can also add visual_text as an option 
-    print(embeddings)
-
+    print(len(embeddings[0].embeddings_float))
+    
 
     
     
