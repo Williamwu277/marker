@@ -1,0 +1,17 @@
+Flask
+Flask-CORS
+pdfplumber
+sentence-transformers
+faiss-cpu
+requests
+python-dotenv
+pytest
+Werkzeug
+numpy
+scikit-learn
+twelvelabs
+nltk
+transformers
+sentence-transformers
+scikit-learn
+pdfplumber
