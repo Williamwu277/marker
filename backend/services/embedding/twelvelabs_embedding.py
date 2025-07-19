@@ -75,7 +75,15 @@ class TwelveLabsEmbeddings:
         """
         Embeds the documents 
         """
-        raise NotImplementedError
+        try:
+            res = self.client.embed.create(model_name="Marengo-retrieval-2.7", text=text)
+            print(f"Created text embedding: id={res.id} model_name={res.model_name} status={res.status}")
+            return res
+        except Exception as e:
+            return {
+                "status": 400,
+                "error": e
+            }
 
 
 if __name__ == "__main__": 
