@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -9,7 +10,7 @@ type ContentType = 'videos' | 'worksheets' | 'notes' | 'overview';
 interface ContentItem {
     id: string;
     name: string;
-    type: 'video' | 'pdf';
+    type: 'video' | 'pdf' | 'png';
     size: string;
     uploadedAt: string;
     thumbnail?: string;
@@ -18,7 +19,8 @@ interface ContentItem {
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<ContentType>('overview');
     const [isUploading, setIsUploading] = useState(false);
-    const [content, setContent] = useState<ContentItem[]>([
+    const pathname = usePathname();
+    /*
         {
             id: '1',
             name: 'Algebra Basics - Chapter 1',
@@ -27,51 +29,86 @@ export default function Dashboard() {
             uploadedAt: '2024-01-15',
             thumbnail: '📹'
         },
-        {
-            id: '2',
-            name: 'Linear Equations Worksheet',
-            type: 'pdf',
-            size: '2.1 MB',
-            uploadedAt: '2024-01-14',
-            thumbnail: '📄'
-        },
-        {
-            id: '3',
-            name: 'Calculus Notes - Derivatives',
-            type: 'pdf',
-            size: '1.8 MB',
-            uploadedAt: '2024-01-13',
-            thumbnail: '📝'
-        }
-    ]);
+    */
+    const [content, setContent] = useState<ContentItem[]>([]);
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        const fetchFileData = async () => {
+            try {
+                const response = await fetch('http://localhost:5099/get_all_files', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const newFiles: ContentItem[] = (await response.json()).files;
+
+                setContent(newFiles);
+            } catch (err) {
+                alert(`Get data overview failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            }
+        };
+
+        fetchFileData();
+    }, []);
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files) return;
 
         setIsUploading(true);
 
-        // Simulate upload process
-        setTimeout(() => {
-            const newFiles: ContentItem[] = Array.from(files).map((file, index) => ({
-                id: Date.now().toString() + index,
+        try {
+            const file = files[0]; // Get the first (and only) file
+
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('file_name', file.name);
+
+            // Upload the file
+            const uploadResponse = await fetch('http://127.0.0.1:5099/upload_file', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json();
+                throw new Error(errorData.error || 'Upload failed');
+            }
+
+            const uploadResult = await uploadResponse.json();
+            console.log('Upload successful:', uploadResult);
+
+            // Add the file to the content list using the returned ID
+            const newFile: ContentItem = {
+                id: uploadResult.file_id, // Use the returned file ID
                 name: file.name,
-                type: file.type.includes('video') ? 'video' : 'pdf',
+                type: file.type.includes('video') ? 'video' : file.type.includes('pdf') ? 'pdf' : 'png',
                 size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
                 uploadedAt: new Date().toISOString().split('T')[0],
                 thumbnail: file.type.includes('video') ? '📹' : '📄'
-            }));
+            };
 
-            setContent(prev => [...newFiles, ...prev]);
+            setContent(prev => [newFile, ...prev]);
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
             setIsUploading(false);
-        }, 2000);
+        }
     };
 
     const getContentByType = (type: ContentType) => {
         if (type === 'overview') return content;
         if (type === 'videos') return content.filter(item => item.type === 'video');
-        if (type === 'worksheets') return content.filter(item => item.type === 'pdf' && item.name.toLowerCase().includes('worksheet'));
-        if (type === 'notes') return content.filter(item => item.type === 'pdf' && item.name.toLowerCase().includes('note'));
+        if (type === 'worksheets') return content.filter(item => item.type === 'pdf' || item.type === 'png');
+        if (type === 'notes') return content.filter(item => item.type === 'pdf' || item.type === 'png');
         return content;
     };
 
@@ -80,20 +117,10 @@ export default function Dashboard() {
 
         if (filteredContent.length === 0) {
             return (
-                <div className="text-center py-12">
+                <div className="text-center py-32">
                     <div className="text-6xl mb-4">📚</div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">No content yet</h3>
-                    <p className="text-foreground/70 mb-6">Upload your first {activeTab.slice(0, -1)} to get started</p>
-                    <label className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors cursor-pointer">
-                        Upload {activeTab.slice(0, -1)}
-                        <input
-                            type="file"
-                            accept={activeTab === 'videos' ? 'video/*' : '.pdf'}
-                            multiple
-                            onChange={handleFileUpload}
-                            className="hidden"
-                        />
-                    </label>
+                    <p className="text-foreground/70 mb-6">Upload your first file or video to get started</p>
                 </div>
             );
         }
@@ -114,7 +141,7 @@ export default function Dashboard() {
                             <p>Uploaded: {item.uploadedAt}</p>
                         </div>
                         <div className="mt-4 flex gap-2">
-                            {item.type === 'pdf' && item.name.toLowerCase().includes('worksheet') && (
+                            {(item.type === 'pdf' || item.type === 'png') && (
                                 <Link
                                     href={`/workspace/${item.id}`}
                                     className="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-secondary transition-colors flex-1 text-center"
@@ -157,8 +184,8 @@ export default function Dashboard() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as ContentType)}
                                     className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
-                                            ? 'bg-primary text-white'
-                                            : 'text-foreground hover:bg-primary/10'
+                                        ? 'bg-primary text-white'
+                                        : 'text-foreground hover:bg-primary/10'
                                         }`}
                                 >
                                     <span className="text-lg">{tab.icon}</span>
@@ -186,13 +213,13 @@ export default function Dashboard() {
                                 <label className="block">
                                     <input
                                         type="file"
-                                        accept=".pdf"
+                                        accept=".pdf, .png"
                                         multiple
                                         onChange={handleFileUpload}
                                         className="hidden"
                                     />
                                     <div className="bg-secondary/10 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors cursor-pointer text-center">
-                                        📄 Upload PDFs
+                                        📄 Upload Files
                                     </div>
                                 </label>
                             </div>
@@ -225,7 +252,7 @@ export default function Dashboard() {
                                 <p className="text-foreground/70">
                                     {activeTab === 'overview' && 'All your uploaded content in one place'}
                                     {activeTab === 'videos' && 'Your math class recordings and lectures'}
-                                    {activeTab === 'worksheets' && 'PDF worksheets and assignments'}
+                                    {activeTab === 'worksheets' && 'Worksheets and assignments'}
                                     {activeTab === 'notes' && 'Your study notes and materials'}
                                 </p>
                             </div>
