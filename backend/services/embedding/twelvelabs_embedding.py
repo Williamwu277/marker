@@ -3,7 +3,7 @@ from typing import List
 import os 
 import time
 
-class Embedder:
+class TwelveLabsEmbeddings:
     def __init__(self, model='Marengo-retrieval-2.7'):
         self.model_name = model 
         self.api_key = os.environ.get('TWELVE_LABS_API')
@@ -37,7 +37,7 @@ class Embedder:
                     "error": e
                 }
     
-    def return_status(self):
+    def return_status(self) -> str:
         return self.embedding_object.status
     
     def update_status(self):
@@ -46,19 +46,42 @@ class Embedder:
                 print(f'processing...')
                 time.sleep(5)
                 self.embedding_object = self.client.embed.task.retrieve(self.embedding_object.id)
+    
+    def embed_video(self, video:str):
+        """
+            Embed a video based on file path 
+        """
+        try:
+            self.add_video(video=video)
+            self.update_status()
+            print(f'embedded video successfully.')
+
+            self.embedding_object = self.client.embed.task.retrieve(self.embedding_object.id)
+            embeddings = embedder.retrieve_embeddings(["audio"])
+            return embeddings
+        except Exception as e:
+            return {
+                "status": 600,
+                "error": e
+            }
+            
+    def embed_query(self, query:str):
+        """
+        Embeds the query 
+        """
+        raise NotImplementedError
+    
+    def embed_documents(self, documents:List[str]):
+        """
+        Embeds the documents 
+        """
+        raise NotImplementedError
 
 
 if __name__ == "__main__": 
     # use case 
-    embedder = Embedder()
-    embedder.add_video('backend/utils/test_video/video3523442589.mp4')
-    
-    embedder.update_status()
-    print(f'embedded video successfully.')
-    embedder.embedding_object = embedder.client.embed.task.retrieve(embedder.embedding_object.id)
-    
-    embeddings = embedder.retrieve_embeddings(["audio"]) # can also add visual_text as an option 
-    print(len(embeddings[0].embeddings_float))
+    embedder = TwelveLabsEmbeddings()
+    print(embedder.embed_video(video='backend/services/embedding/test_video/video3523442589.mp4'))
     
 
     
