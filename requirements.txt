@@ -1,1 +1,3 @@
  twelvelabs
+ langchain
+ langchain_community
