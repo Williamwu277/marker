@@ -64,7 +64,7 @@ class FAISS_INDEX:
         document_chunks = [Document(**chunk) for chunk in chunks]
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
-    def search(self, query:str, document_name:str):
+    def search(self, query:str, document_name:str, most_rel:bool):
         """
         Searches the embeddings to find the top k most relevant documents. 
         Returns the most relevant document found. 
@@ -75,8 +75,11 @@ class FAISS_INDEX:
             filter={"document_name": document_name},
         )
         
-        results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
-        return results_sorted[0][0]  
+        if most_rel: 
+            results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
+            return results_sorted[0][0]  
+        else:
+            return [chunk[0] for chunk in results]
 
     
 if __name__ == '__main__':
