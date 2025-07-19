@@ -57,7 +57,6 @@ class FAISS_INDEX:
                 "status": 500,
                 "error": e
             }
-            
 
     def add_text_chunks_to_index(self, chunks:list[dict[str]]):
         c_name = chunks[0]['metadata']['document_name']
@@ -65,18 +64,21 @@ class FAISS_INDEX:
         document_chunks = [Document(**chunk) for chunk in chunks]
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
-    def search(self, query:str, filter:dict={}):
+    def search(self, query:str, document_name:str):
+        """
+        Searches the embeddings to find the top k most relevant documents. 
+        Returns the most relevant document found. 
+        """
         results = self.vector_store.asimilarity_search_with_relevance_scores(
             query=query,
             k=self.k_results,
-            filter=filter,
+            filter={"document_name": document_name},
         )
         
         results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
         return results_sorted[0][0]  
 
     
-
 if __name__ == '__main__':
     # use case 
 
