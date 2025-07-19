@@ -10,9 +10,9 @@ class NoteClusterer:
     def __init__(self):
         self.tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
         self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-        nltk.download("punkt")
+        nltk.download("punkt_tab")
 
-    def extract_text_from_pdf(file_path: str, document_name: str) -> str:
+    def extract_text_from_pdf(self, file_path: str, document_name: str) -> str:
         """returns chunks with the following info, page number, document name, chunk content, and type"""
         extracted_chunks = []
 
@@ -29,7 +29,7 @@ class NoteClusterer:
                     })
         return extracted_chunks
 
-    def sent_split(page_chunk: dict):
+    def sent_split(self, page_chunk: dict):
         "mutates page_chunk to split the chunk content into sentences"
         sentences = nltk.sent_tokenize(page_chunk["chunk_content"])
         if sentences:
@@ -41,7 +41,7 @@ class NoteClusterer:
         embeddings = self.embedding_model.encode(sentences, convert_to_tensor=True)
 
         n_clusters = max(2, len(embeddings) // 5) # 5 selected as an idea is often given 5 sentences
-        clustering = AgglomerativeClustering(n_clusters=n_clusters, affinity='cosine', linkage='average')
+        clustering = AgglomerativeClustering(n_clusters=n_clusters)
         cluster_labels = clustering.fit_predict(embeddings)
 
         current_cluster = cluster_labels[0]
@@ -58,7 +58,7 @@ class NoteClusterer:
         clusters.append(current_text.strip())
         page_chunk["chunk_content"] = clusters
     
-    def merge_small_clusters(self, chunks, min_tokens=30) -> list:
+    def merge_small_clusters(self, chunks, min_tokens=45) -> list:
         """merges clusters that are smaller than min_tokens"""
         merged_chunks = []
         current_chunk = ""
@@ -66,13 +66,15 @@ class NoteClusterer:
 
         for chunk in chunks:
             chunk_token_count = len(self.tokenizer.encode(chunk, add_special_tokens=False))
-            total_chunk_tokens += chunk_token_count
-            current_chunk += " " + chunk
 
-        if total_chunk_tokens >= min_tokens:
-            merged_chunks.append(current_chunk.strip())
-            current_chunk = ""
-            total_chunk_tokens = 0
+            if total_chunk_tokens + chunk_token_count < min_tokens:
+                current_chunk += " " + chunk
+                total_chunk_tokens += chunk_token_count
+            else:
+                if current_chunk:
+                    merged_chunks.append(current_chunk.strip())
+                current_chunk = chunk
+                total_chunk_tokens = chunk_token_count
 
         if current_chunk.strip():
             merged_chunks.append(current_chunk.strip())
@@ -91,8 +93,8 @@ class NoteClusterer:
         return split_chunks
     
     def process_chunks(self, page_chunk: dict) -> list:
-        """retunr dict that isabella wanted, where each chunk is a dict, returns a list of dicts representing chunks"""
-        merged_chunks = self.merge_small_clusters(page_chunk)
+        """return dict that isabella wanted, where each chunk is a dict, returns a list of dicts representing chunks"""
+        merged_chunks = self.merge_small_clusters(page_chunk["chunk_content"])
         processed_chunks = []
         final_chunks = []
 
@@ -127,3 +129,16 @@ class NoteClusterer:
             processed_chunks.extend(self.process_chunks(page_chunk))
 
         return processed_chunks
+
+if __name__ == "__main__":
+    # Hardcode your PDF path and document name here
+    pdf_path = r"c:\University of Toronto\Personal Projects\marker\backend\services\sample_pdf.pdf"
+    document_name = "Sample Document"
+
+    clusterer = NoteClusterer()
+    chunks = clusterer.process_pdf(pdf_path, document_name)
+
+    print(f"Total chunks: {len(chunks)}")
+    for i, chunk in enumerate(chunks, 1):
+        print(f"\nChunk {i}:")
+        print(chunk)
