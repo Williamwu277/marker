@@ -48,7 +48,7 @@ def draw_page(canvas, doc):
     canvas.rect(0, height - 0.5*inch, width, 0.5*inch, fill=1, stroke=0)
     canvas.setFillColor(COLOR_PAPER)
     canvas.setFont("Helvetica-Bold", 14)
-    canvas.drawString(inch, height - 0.35*inch, "Study Space • Lecture Notes")
+    canvas.drawString(inch, height - 0.35*inch, "Marker • Notes")
     # Footer band
     canvas.setFillColor(COLOR_NOTEBOOK)
     canvas.rect(0, 0, width, 0.3*inch, fill=1, stroke=0)
