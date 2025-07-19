@@ -65,18 +65,36 @@ class TwelveLabsEmbeddings(Embeddings):
                 "status": 600,
                 "error": e
             }
+    
+    def embed_text(self, text:str):
+        res = self.client.embed.create(model_name="Marengo-retrieval-2.7", text=text)
+        print(f"Created text embedding: id={res.id} model_name={res.model_name} status={res.status}")
+        return res
             
     def embed_query(self, query:str):
         """
         Embeds the query 
         """
-        return [0.0] * 1024
+        if query:
+            return self.embed_text(query)
+        
     
     def embed_documents(self, documents:List[str]):
         """
         Embeds the documents 
         """
-        return [[0.0] * 1024 for _ in documents]
+        try:
+            embedded_documents = []
+            for document in documents:
+                res = self.embed_text(text=document)
+                embedded_documents.append(res)
+                print(f"Created text embedding: id={res.id} model_name={res.model_name} status={res.status}")
+            return embedded_documents
+        except Exception as e:
+            return {
+                "status": 400,
+                "error": e
+            }
 
 
 if __name__ == "__main__": 
