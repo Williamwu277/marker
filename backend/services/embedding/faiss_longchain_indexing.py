@@ -66,12 +66,15 @@ class FAISS_INDEX:
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
     def search(self, query:str, filter:dict={}):
-        results = self.vector_store.similarity_search(
+        results = self.vector_store.asimilarity_search_with_relevance_scores(
             query=query,
             k=self.k_results,
             filter=filter,
         )
-        return results 
+        
+        results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
+        return results_sorted[0][0]  
+
     
 
 if __name__ == '__main__':
