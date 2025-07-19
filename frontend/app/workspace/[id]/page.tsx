@@ -144,7 +144,7 @@ export default function Workspace({ params }: { params: { id: string } }) {
                 </div>
               </div>
               
-              <div className="p-8 bg-paper min-h-[600px]">
+              <div className="p-8 bg-paper min-h-[600px] rounded-b-xl">
                 <div className="space-y-6">
                   {problems.map((problem) => (
                     <div
