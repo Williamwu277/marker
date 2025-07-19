@@ -2,8 +2,9 @@ from  twelvelabs import TwelveLabs
 from typing import List
 import os 
 import time
+from langchain.embeddings.base import Embeddings
 
-class TwelveLabsEmbeddings:
+class TwelveLabsEmbeddings(Embeddings):
     def __init__(self, model='Marengo-retrieval-2.7'):
         self.model_name = model 
         self.api_key = os.environ.get('TWELVE_LABS_API')
@@ -69,19 +70,19 @@ class TwelveLabsEmbeddings:
         """
         Embeds the query 
         """
-        raise NotImplementedError
+        return [0.0] * 1024
     
     def embed_documents(self, documents:List[str]):
         """
         Embeds the documents 
         """
-        raise NotImplementedError
+        return [[0.0] * 1024 for _ in documents]
 
 
 if __name__ == "__main__": 
     # use case 
     embedder = TwelveLabsEmbeddings()
-    print(embedder.embed_video(video='backend/services/embedding/test_video/video3523442589.mp4'))
+    print(type(embedder.embed_video(video='backend/services/embedding/test_video/video3523442589.mp4')[0]))
     
 
     

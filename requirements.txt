@@ -1,3 +1,5 @@
- twelvelabs
- langchain
- langchain_community
+twelvelabs
+langchain
+langchain_community
+faiss
+numpy
