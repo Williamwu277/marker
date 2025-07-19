@@ -2,8 +2,9 @@ from  twelvelabs import TwelveLabs
 from typing import List
 import os 
 import time
+from langchain.embeddings.base import Embeddings
 
-class Embedder:
+class TwelveLabsEmbeddings(Embeddings):
     def __init__(self, model='Marengo-retrieval-2.7'):
         self.model_name = model 
         self.api_key = os.environ.get('TWELVE_LABS_API')
@@ -37,7 +38,7 @@ class Embedder:
                     "error": e
                 }
     
-    def return_status(self):
+    def return_status(self) -> str:
         return self.embedding_object.status
     
     def update_status(self):
@@ -46,19 +47,59 @@ class Embedder:
                 print(f'processing...')
                 time.sleep(5)
                 self.embedding_object = self.client.embed.task.retrieve(self.embedding_object.id)
+    
+    def embed_video(self, video:str):
+        """
+            Embed a video based on file path 
+        """
+        try:
+            self.add_video(video=video)
+            self.update_status()
+            print(f'embedded video successfully.')
+
+            self.embedding_object = self.client.embed.task.retrieve(self.embedding_object.id)
+            embeddings = self.retrieve_embeddings(["audio"])
+            return embeddings
+        except Exception as e:
+            return {
+                "status": 600,
+                "error": e
+            }
+    
+    def embed_text(self, text:str):
+        res = self.client.embed.create(model_name="Marengo-retrieval-2.7", text=text)
+        return res.text_embedding.segments[0].embeddings_float
+            
+    def embed_query(self, query:str):
+        """
+        Embeds the query 
+        """
+        if query:
+            return self.embed_text(text=query)
+        
+    
+    def embed_documents(self, documents:List[str]):
+        """
+        Embeds the documents 
+        """
+        try:
+            embedded_documents = []
+            for document in documents:
+                res = self.embed_text(text=document)
+                embedded_documents.append(res)
+
+            return embedded_documents
+        except Exception as e:
+            return {
+                "status": 400,
+                "error": e
+            }
 
 
 if __name__ == "__main__": 
     # use case 
-    embedder = Embedder()
-    embedder.add_video('backend/utils/test_video/video3523442589.mp4')
-    
-    embedder.update_status()
-    print(f'embedded video successfully.')
-    embedder.embedding_object = embedder.client.embed.task.retrieve(embedder.embedding_object.id)
-    
-    embeddings = embedder.retrieve_embeddings(["audio"]) # can also add visual_text as an option 
-    print(len(embeddings[0].embeddings_float))
+    embedder = TwelveLabsEmbeddings()
+    print(embedder.embed_text('lol what is this'))
     
 
     
