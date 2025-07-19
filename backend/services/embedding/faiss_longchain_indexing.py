@@ -37,7 +37,6 @@ class FAISS_INDEX:
 
     def add_video_chunks_to_index(self, segements: list[twelvelabs.models.embed.SegmentEmbedding], video:str):
         try: 
-            print(segements)
             for i in range(len(segements)):
                 embedding_object = segements[i]
                 start = embedding_object.start_offset_sec
@@ -45,9 +44,10 @@ class FAISS_INDEX:
                 embeddings = embedding_object.embeddings_float
 
                 document = self.format_video(start, end, video, i)
-                self.faiss_index.add(np.array([embeddings]).astype("float32"))
+                self.faiss_index.add(np.array([embeddings], dtype=np.float32))
+    
                 doc_id = f'audio_segement_{i}'
-                self.docstore[doc_id] = document
+                self.docstore._dict[doc_id] = document
                 self.index_to_docstore_id[self.faiss_index.ntotal - 1] = doc_id
             print(f'Sucessfully added {len(segements)} audio segements to index')
         except Exception as e: 
@@ -79,6 +79,7 @@ if __name__ == '__main__':
     video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
     chunk_embeddings = embedder.embed_video(video=video_path)
     test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
+    print(test_index.search(query='what design elements are in this'))
 
 
 

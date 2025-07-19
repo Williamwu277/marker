@@ -58,7 +58,7 @@ class TwelveLabsEmbeddings(Embeddings):
             print(f'embedded video successfully.')
 
             self.embedding_object = self.client.embed.task.retrieve(self.embedding_object.id)
-            embeddings = embedder.retrieve_embeddings(["audio"])
+            embeddings = self.retrieve_embeddings(["audio"])
             return embeddings
         except Exception as e:
             return {
@@ -68,15 +68,14 @@ class TwelveLabsEmbeddings(Embeddings):
     
     def embed_text(self, text:str):
         res = self.client.embed.create(model_name="Marengo-retrieval-2.7", text=text)
-        print(f"Created text embedding: id={res.id} model_name={res.model_name} status={res.status}")
-        return res
+        return res.text_embedding.segments[0].embeddings_float
             
     def embed_query(self, query:str):
         """
         Embeds the query 
         """
         if query:
-            return self.embed_text(query)
+            return self.embed_text(text=query)
         
     
     def embed_documents(self, documents:List[str]):
@@ -88,7 +87,7 @@ class TwelveLabsEmbeddings(Embeddings):
             for document in documents:
                 res = self.embed_text(text=document)
                 embedded_documents.append(res)
-                print(f"Created text embedding: id={res.id} model_name={res.model_name} status={res.status}")
+
             return embedded_documents
         except Exception as e:
             return {
@@ -100,7 +99,7 @@ class TwelveLabsEmbeddings(Embeddings):
 if __name__ == "__main__": 
     # use case 
     embedder = TwelveLabsEmbeddings()
-    print(type(embedder.embed_video(video='backend/services/embedding/test_video/video3523442589.mp4')[0]))
+    print(embedder.embed_text('lol what is this'))
     
 
     
