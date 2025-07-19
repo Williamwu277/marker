@@ -27,20 +27,13 @@ class GeminiClient:
             contents=contents,
         )
         return response.text
-    
-    
-    def generate_practice_questions(self, topic, num_questions):
-        prompt_template = self.prompts['gemini']['practice_questions']['prompt']
-        contents = prompt_template.format(num_questions=num_questions, topic=topic)
-        response = self.generate_content(contents)
-        return response
 
     def validate_xml(self, xml_content: str) -> str:
         """Validate and clean XML using OpenAI."""
         print("Validating XML with OpenAI...")
         try:
             # Get validation prompt from YAML config
-            prompt_template = self.prompts['gemini']['notes']['xml_verification']
+            prompt_template = self.prompts['openai']['xml_verification'][type]
             
             response = self.openai_client.chat.completions.create(
                 model="gpt-4",
@@ -65,13 +58,10 @@ class GeminiClient:
         validated_xml = self.validate_xml(initial_response)
         return validated_xml
     
-    def test(self, topic, context):
-        prompt_template = self.prompts['gemini']['notes']['prompt']
+    def generate_practice_questions(self, topic: str, context: str) -> str:
+        prompt_template = self.prompts['gemini']['practice_questions']['prompt']
         contents = prompt_template.format(topic=topic, context=context)
-        return contents
-    
-    def analyze_written_work(self, text):
-        prompt_template = self.prompts['gemini']['analyze_written_work']['prompt']
-        contents = prompt_template.format(text=text)
-        response = self.generate_content(contents)
-        return response
+        initial_response = self.generate_content(contents)
+        # Validate and clean XML with OpenAI
+        validated_xml = self.validate_xml(initial_response) 
+        return validated_xml
