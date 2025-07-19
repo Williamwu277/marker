@@ -1,3 +1,4 @@
+pyyaml
 twelvelabs
 langchain
 langchain_community
@@ -17,4 +18,3 @@ nltk
 transformers
 pytesseract
 Pillow
-

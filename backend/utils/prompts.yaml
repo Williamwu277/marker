@@ -1,0 +1,118 @@
+gemini:
+  practice_questions:
+    prompt: |
+      Generate {num_questions} practice questions about {topic}.
+      Each question should:
+      - Be clear and concise
+      - Cover key concepts
+      - Include the correct answer
+      - Vary in difficulty
+      Format each question with:
+      1. Question
+      2. Answer
+  notes:
+    prompt: |
+      <Instructions>
+        You are a senior domain expert in <Topic>{topic}</Topic>.  
+        Your task is to generate comprehensive, structured notes in strictly valid XML based on the provided context.  
+        **Do not** include any explanation or text outside of the '<Notes>' root element.  
+
+        **Core Formatting Rules:**  
+          - Wrap critical terms in '<emphasis type="bold">...</emphasis>'.  
+          - Underline section titles or pivotal statements with '<emphasis type="underline">...</emphasis>'.  
+          - Italicize examples or supplementary details with '<emphasis type="italic">...</emphasis>'.  
+
+        **XML Validation Step (MUST):**  
+          1. After you construct the XML, perform a full well-formedness check:  
+            - Every opening tag has a matching closing tag.  
+            - Tags are properly nested (no overlaps).  
+            - Attribute values are quoted and escape any '<', '>', or '&' within text.  
+          2. If you find any error, correct it before returning.  
+          3. Only return the final, validated XML-nothing else.
+      </Instructions>
+
+      <Schema>
+        <Notes>
+          <Objective>...</Objective>
+          <Context>...</Context>
+          <Overview>...</Overview>
+          <KeyConcepts>
+            <Concept name="..." definition="..."/>
+            <!-- Repeat for each key concept -->
+          </KeyConcepts>
+          <DetailedNotes>
+            <Section title="...">
+              <Description>...</Description>
+              <Examples>
+                <Example>...</Example>
+                <!-- Repeat for each example -->
+              </Examples>
+            </Section>
+            <!-- Repeat for each logical section -->
+          </DetailedNotes>
+          <Summary>...</Summary>
+        </Notes>
+      </Schema>
+
+      <Requirements>
+        <Overview maxWords="50">
+          A concise introduction-wrap the most critical phrase in '<emphasis type="bold">...</emphasis>'.
+        </Overview>
+        <KeyConcepts minItems="3" definitionMaxWords="10">
+          List and define at least three concepts (<=10 words each).  
+          Wrap each concept name in '<emphasis type="bold">...</emphasis>'.
+        </KeyConcepts>
+        <DetailedNotes sections="3-7" exampleMaxWords="10">
+          Break the context into 3-7 sections.  
+          Underline each section title via '<emphasis type="underline">...</emphasis>'.  
+          Each '<Description>' <=20 words.  
+          Each '<Example>' <=10 words, wrapped in '<emphasis type="italic">...</emphasis>'.
+        </DetailedNotes>
+        <Summary maxWords="50">
+          A brief recap-highlight the final takeaway with  
+          '<emphasis type="bold"><emphasis type="italic">...</emphasis></emphasis>'.
+        </Summary>
+        <OutputFormat>
+          Valid XML only-no markdown, no prose outside '<Notes>'.  
+          All styling via '<emphasis type="...">' tags.
+        </OutputFormat>
+      </Requirements>
+
+      <Context>
+        {context}
+      </Context>
+    xml_verification: |
+      You are an XML validator for study notes. Validate and fix the following XML to ensure:
+      1. Well-formed XML structure
+      2. Proper nesting of elements
+      3. Valid emphasis tags (bold, italic, underline)
+      4. Consistent formatting
+      5. Complete sections (Objective, Context, Overview, KeyConcepts, DetailedNotes, Summary)
+      
+      If the XML is valid, return it unchanged.
+      If there are issues, fix them while preserving the content and return the corrected XML.
+      
+      Expected structure:
+      <Notes>
+        <Objective>Brief learning objective</Objective>
+        <Context>Background information</Context>
+        <Overview>Key points and importance</Overview>
+        <KeyConcepts>
+          <Concept>
+            <Name>Term name</Name>
+            <Definition>Clear definition</Definition>
+          </Concept>
+        </KeyConcepts>
+        <DetailedNotes>
+          <Section>
+            <Title>Section heading</Title>
+            <Description>Main content</Description>
+            <Examples>
+              <Example>Specific example</Example>
+            </Examples>
+          </Section>
+        </DetailedNotes>
+        <Summary>Brief recap</Summary>
+      </Notes>
+
+      {xml} 

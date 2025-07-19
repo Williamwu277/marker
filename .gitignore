@@ -41,6 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 /backend/venv
+/backend/output
+
 /node_modules/.bin
 /node_modules
 package.json

@@ -2,16 +2,21 @@ import os
 import yaml
 from dotenv import load_dotenv
 from google import genai
+from openai import OpenAI
 
 
 class GeminiClient:
     def __init__(self, model="gemini-2.5-flash"):
+        # Initialize Gemini
         api_key = os.environ["GEMINI_API_KEY"]
         self.client = genai.Client(api_key=api_key)
         self.model = model
         
+        # Initialize OpenAI
+        self.openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        
         # Load prompts from YAML file
-        prompts_path = os.path.join(os.path.dirname(__file__), 'templates' , 'prompts.yaml')
+        prompts_path = os.path.join(os.path.dirname(__file__), 'prompts.yaml')
         with open(prompts_path, 'r') as f:
             self.prompts = yaml.safe_load(f)
 
@@ -30,19 +35,43 @@ class GeminiClient:
         response = self.generate_content(contents)
         return response
 
-    def generate_notes(self, topic):
+    def validate_xml(self, xml_content: str) -> str:
+        """Validate and clean XML using OpenAI."""
+        print("Validating XML with OpenAI...")
+        try:
+            # Get validation prompt from YAML config
+            prompt_template = self.prompts['gemini']['notes']['xml_verification']
+            
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": prompt_template},
+                    {"role": "user", "content": xml_content}
+                ],
+                temperature=0.1  # Lower temperature for more consistent output
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"OpenAI validation failed: {e}")
+            return xml_content  # Return original if validation fails
+
+    def generate_notes(self, topic: str, context: str) -> str:
+        # Generate initial notes with Gemini
         prompt_template = self.prompts['gemini']['notes']['prompt']
-        contents = prompt_template.format(topic=topic)
-        response = self.generate_content(contents)
-        return response
+        contents = prompt_template.format(topic=topic, context=context)
+        initial_response = self.generate_content(contents)
+        
+        # Validate and clean XML with OpenAI
+        validated_xml = self.validate_xml(initial_response)
+        return validated_xml
+    
+    def test(self, topic, context):
+        prompt_template = self.prompts['gemini']['notes']['prompt']
+        contents = prompt_template.format(topic=topic, context=context)
+        return contents
     
     def analyze_written_work(self, text):
         prompt_template = self.prompts['gemini']['analyze_written_work']['prompt']
         contents = prompt_template.format(text=text)
         response = self.generate_content(contents)
         return response
-
-    
-load_dotenv()
-gemini = GeminiClient()
-print(gemini.generate_notes("python programming"))
