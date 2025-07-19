@@ -13,7 +13,7 @@ class NoteClusterer:
     def extract_text_from_pdf(self, file_path: str) -> str:
         """returns chunks with the following info, page number, document name, chunk content, and type"""
         extracted_chunks = []
-        document_name = file_path.split('/')[-1]
+        document_name = self.get_doc_name(file_path)
 
         with pdfplumber.open(file_path) as file:
             for i, page in enumerate(file.pages, start=1):
@@ -132,6 +132,9 @@ class NoteClusterer:
             processed_chunks.extend(self.process_chunks(page_chunk))
 
         return processed_chunks
+    
+    def get_doc_name(self, file_path:str) -> str:
+        return file_path.split('/')[-1]
 
 if __name__ == "__main__":
     # Hardcode your PDF path and document name here
