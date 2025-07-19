@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from twelvelabs_embedding import TwelveLabsEmbeddings
-from 
+from note_upload import NoteClusterer
 
 
 class FAISS_INDEX:
@@ -59,19 +59,20 @@ class FAISS_INDEX:
             }
             
 
-    def add_text_chunks_to_index(self, chunks:list[dict[str]], name:str):
-        ids = [f'{name}_chunk_{i}' for i in range(len(chunks))]
-        docuemnt_chunks = [Document(**chunk) for chunk in chunks]
-        self.vector_store.add_documents(documents=docuemnt_chunks, ids=ids)
+    def add_text_chunks_to_index(self, chunks:list[dict[str]]):
+        c_name = chunks[0]['metadata']['document_name']
+        ids = [f'{c_name}_chunk_{i}' for i in range(len(chunks))]
+        document_chunks = [Document(**chunk) for chunk in chunks]
+        self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
     def search(self, query:str, filter:dict={}):
         results = self.vector_store.similarity_search(
-            query,
+            query=query,
             k=self.k_results,
             filter=filter,
         )
         return results 
-
+    
 
 if __name__ == '__main__':
     # use case 
@@ -85,6 +86,12 @@ if __name__ == '__main__':
     # print(test_index.search(query='what design elements are in this'))
 
     #### text ####
+    text_chunker = NoteClusterer()
+    test_index = FAISS_INDEX()
+    chunks = text_chunker.process_pdf(file_path='backend/services/sample_pdf.pdf')
+    test_index.add_text_chunks_to_index(chunks=chunks)
+    # print(test_index.search(query='what awards are mentioned'))
+
 
 
 

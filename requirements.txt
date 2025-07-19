@@ -12,12 +12,8 @@ requests
 python-dotenv
 pytest
 Werkzeug
-scikit-learn
-twelvelabs
+scikit-learn==1.3.2
 nltk
 transformers
-sentence-transformers
-scikit-learn
-pdfplumber
 pytesseract
 Pillow
