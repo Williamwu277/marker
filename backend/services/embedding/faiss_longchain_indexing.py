@@ -30,7 +30,7 @@ class FAISS_INDEX:
             page_content=f'Audio segement {chunk_num}',
             metadata={
                 "type": "video",
-                "video_name": video_name,
+                "document_name": video_name,
                 "start_time": start_time,
                 "end_time": end_time
             }
@@ -57,6 +57,7 @@ class FAISS_INDEX:
                 "status": 500,
                 "error": e
             }
+            
 
     def add_text_chunks_to_index(self, chunks:list[dict[str]]):
         c_name = chunks[0]['metadata']['document_name']
@@ -64,24 +65,18 @@ class FAISS_INDEX:
         document_chunks = [Document(**chunk) for chunk in chunks]
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
-    def search(self, query:str, document_name:str, most_rel:bool):
-        """
-        Searches the embeddings to find the top k most relevant documents. 
-        Returns the most relevant document found. 
-        """
+    def search(self, query:str, filter:dict={}):
         results = self.vector_store.asimilarity_search_with_relevance_scores(
             query=query,
             k=self.k_results,
-            filter={"document_name": document_name},
+            filter=filter,
         )
         
-        if most_rel: 
-            results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
-            return results_sorted[0][0]  
-        else:
-            return [chunk[0] for chunk in results]
+        results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
+        return results_sorted[0][0]  
 
     
+
 if __name__ == '__main__':
     # use case 
 
