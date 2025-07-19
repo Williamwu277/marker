@@ -12,5 +12,10 @@ gemini:
       2. Answer
   notes:
     prompt: |
-      Generate 1 paragraph about {topic}.
-      
+      Generate brief study notes about {topic}.
+      The notes should:
+      - Start with a brief overview
+      - Include key concepts and definitions
+      - Use bullet points for clarity
+      - Provide relevant examples
+      - Be organized in logical sections
