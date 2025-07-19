@@ -15,3 +15,5 @@ transformers
 sentence-transformers
 scikit-learn
 pdfplumber
+pytesseract
+Pillow
