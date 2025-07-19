@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from twelvelabs_embedding import TwelveLabsEmbeddings
+from 
 
 
 class FAISS_INDEX:
@@ -74,12 +75,17 @@ class FAISS_INDEX:
 
 if __name__ == '__main__':
     # use case 
-    test_index = FAISS_INDEX()
-    embedder = TwelveLabsEmbeddings()
-    video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
-    chunk_embeddings = embedder.embed_video(video=video_path)
-    test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
-    print(test_index.search(query='what design elements are in this'))
+
+    #### videos ######
+    # test_index = FAISS_INDEX()
+    # embedder = TwelveLabsEmbeddings()
+    # video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
+    # chunk_embeddings = embedder.embed_video(video=video_path)
+    # test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
+    # print(test_index.search(query='what design elements are in this'))
+
+    #### text ####
+
 
 
 
