@@ -28,7 +28,7 @@ class GeminiClient:
         )
         return response.text
 
-    def validate_xml(self, xml_content: str) -> str:
+    def validate_xml(self, xml_content: str, type: str) -> str:
         """Validate and clean XML using OpenAI."""
         print("Validating XML with OpenAI...")
         try:
@@ -55,7 +55,7 @@ class GeminiClient:
         initial_response = self.generate_content(contents)
         
         # Validate and clean XML with OpenAI
-        validated_xml = self.validate_xml(initial_response)
+        validated_xml = self.validate_xml(initial_response, "notes")
         return validated_xml
     
     def generate_practice_questions(self, topic: str, context: str) -> str:
@@ -63,5 +63,5 @@ class GeminiClient:
         contents = prompt_template.format(topic=topic, context=context)
         initial_response = self.generate_content(contents)
         # Validate and clean XML with OpenAI
-        validated_xml = self.validate_xml(initial_response) 
+        validated_xml = self.validate_xml(initial_response, "questions") 
         return validated_xml

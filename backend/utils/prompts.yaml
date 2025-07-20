@@ -147,8 +147,8 @@ openai:
       4. Consistent formatting
       5. Complete sections (Objective, Context, Overview, KeyConcepts, DetailedNotes, Summary)
 
-      If the XML is valid, return it unchanged.
-      If there are issues, fix them while preserving the content and return the corrected XML.
+      If the XML is valid, return the XML **unchanged**.
+      If there are issues, fix them while preserving the content and return the corrected XML with **no extraneous content**.
 
       Expected structure:
       <Notes>
@@ -173,6 +173,35 @@ openai:
         <Summary>Brief recap</Summary>
       </Notes>
 
-      {xml} 
+      Please return the proper XML with no additional text or explanation.
     questions: |
+      You are an XML validator for study questions. Validate and fix the following XML to ensure:
+      1. Well-formed XML structure
+      2. Proper nesting of elements
+      3. Valid emphasis tags (bold, italic, underline)
+      4. Consistent formatting
+      5. Complete sections (Objective, Context, Overview, KeyConcepts, DetailedNotes, Summary)
 
+      If the XML is valid, return it **unchanged**.
+      If there are issues, fix them while preserving the content and return the corrected XML with **no extraneous content**.
+
+      Expected structure:
+      <PracticeQuestions>
+        <Question type="multiple_choice" difficulty="easy">
+          <QuestionText>Brief question text</QuestionText>
+          <Choices>
+            <Choice correct="false">Option A</Choice>
+            <Choice correct="true">Option B</Choice>
+            <Choice correct="false">Option C</Choice>
+            <!-- 3-5 total choices -->
+          </Choices>
+          <Answer>Option B</Answer>
+        </Question>
+        <Question type="long_answer" difficulty="hard">
+          <QuestionText>In-depth question text</QuestionText>
+          <Answer>Comprehensive answer text</Answer>
+        </Question>
+        <!-- Repeat for each question -->
+      </PracticeQuestions>
+
+      Please return the proper XML with no additional text or explanation.
