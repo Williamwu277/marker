@@ -1,7 +1,7 @@
 import os
 import traceback
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from utils.parser import Parser
 from services.gemini_service import GeminiService
@@ -349,6 +349,36 @@ def generate_notes(file_id):
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
+
+@app.route('/download_notes/<file_id>', methods=['GET'])
+def download_notes(file_id):
+    """
+    Serve the generated notes.pdf file for download or preview
+    Args:
+        file_id: ID of the file (used for potential future file-specific notes)
+    Returns:
+        PDF file response
+    """
+    try:
+        # Path to the generated notes.pdf
+        notes_path = os.path.join(os.path.dirname(__file__), 'output', 'notes.pdf')
+        
+        # Check if file exists
+        if not os.path.exists(notes_path):
+            return jsonify({'error': 'Notes file not found'}), 404
+        
+        # Get download parameter to determine if it should be downloaded or viewed inline
+        download = request.args.get('download', 'false').lower() == 'true'
+        
+        return send_file(
+            notes_path,
+            as_attachment=download,
+            download_name=f'notes_{file_id}.pdf',
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Error serving notes file: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5099)

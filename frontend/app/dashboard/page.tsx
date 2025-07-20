@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Modal from '../../components/Modal';
 import ContentViewer from '../../components/ContentViewer';
+import PDFPreview from '../../components/PDFPreview';
 
 type ContentType = 'videos' | 'worksheets' | 'notes' | 'overview';
 
@@ -38,6 +39,8 @@ export default function Dashboard() {
     const [modalType, setModalType] = useState<'notes' | 'video' | null>(null);
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     const [isGeneratingNotes, setIsGeneratingNotes] = useState<string | null>(null); // Track which file is generating notes
+    const [isPDFPreviewOpen, setIsPDFPreviewOpen] = useState(false);
+    const [pdfPreviewData, setPDFPreviewData] = useState<{ fileId: string; fileName: string } | null>(null);
     /*
         {
             id: '1',
@@ -187,7 +190,9 @@ export default function Dashboard() {
             const result = await response.json();
             
             if (result.success) {
-                alert(`Notes generated successfully for "${item.name}"! Check the backend/output folder for notes.pdf`);
+                // Show PDF preview instead of alert
+                setPDFPreviewData({ fileId: item.id, fileName: item.name });
+                setIsPDFPreviewOpen(true);
             } else {
                 throw new Error(result.error || 'Failed to generate notes');
             }
@@ -202,6 +207,12 @@ export default function Dashboard() {
         setIsModalOpen(false);
         setModalContent(null);
         setModalType(null);
+        setIsLoadingModal(false);
+    };
+
+    const closePDFPreview = () => {
+        setIsPDFPreviewOpen(false);
+        setPDFPreviewData(null);
     };
 
     const renderContentGrid = () => {
@@ -410,6 +421,15 @@ export default function Dashboard() {
                     isLoading={isLoadingModal}
                 />
             </Modal>
+
+            {/* PDF Preview Modal */}
+            {isPDFPreviewOpen && pdfPreviewData && (
+                <PDFPreview
+                    fileId={pdfPreviewData.fileId}
+                    fileName={pdfPreviewData.fileName}
+                    onClose={closePDFPreview}
+                />
+            )}
         </div>
     );
 } 
