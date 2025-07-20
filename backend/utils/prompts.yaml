@@ -2,7 +2,7 @@ gemini:
   practice_questions:
     prompt: |
       <Instructions>
-        You are a senior domain expert in <Topic>{topic}</Topic>.  
+        You are a senior domain expert in creating test and practice questions.  
         Your task is to generate a diverse set of practice questions in strictly valid XML based on the provided context.  
         **Do not** include any explanation or text outside of the '<PracticeQuestions>' root element.  
 
@@ -68,7 +68,7 @@ gemini:
   notes:
     prompt: |
       <Instructions>
-        You are a senior domain expert in <Topic>{topic}</Topic>.  
+        You are a senior domain expert in comprehensive note taking.  
         Your task is to generate comprehensive, structured notes in strictly valid XML based on the provided context.  
         **Do not** include any explanation or text outside of the '<Notes>' root element.  
 
