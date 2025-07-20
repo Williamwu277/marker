@@ -233,7 +233,7 @@ def upload_video():
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
-            'file_usage': file_data['file_usage']
+            'file_usage': file_data['file_usage'],
             'video_summary': video_summary
         }), 200
 
