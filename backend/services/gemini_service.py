@@ -1,9 +1,6 @@
 # services/gemini_service.py
 
-import json
 from dotenv import load_dotenv
-from typing import List, Dict, Any
-
 
 import os
 import sys
@@ -13,7 +10,8 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, project_root)
 
 from backend.utils.gemini_client import GeminiClient
-from backend.services.pdf_generation import generate_pdf_from_xml
+from backend.services.notes_generation import generate_notes_from_xml
+from backend.services.worksheet_generation import generate_worksheet_from_xml
 
 
 
@@ -29,14 +27,19 @@ class GeminiService:
     def generate_notes(self, topic: str, context: str):
         xml = self.client.generate_notes(topic, context)
         print(xml)
-        output = generate_pdf_from_xml(xml, output_filename="notes.pdf")
+        output = generate_notes_from_xml(xml, output_filename="notes.pdf")
         print("Wrote PDF to", output)
 
     def generate_practice_questions(self, topic: str, context: str):
         xml = self.client.generate_practice_questions(topic, context)
-        print(xml)
-        #output = generate_pdf_from_xml(xml, output_filename="questions.pdf")
-        #print("Wrote PDF to", output)
+        
+        # Generate worksheet without answers
+        worksheet = generate_worksheet_from_xml(xml, "worksheet.pdf", include_answers=False)
+        print("Wrote worksheet to", worksheet)
+        
+        # Generate answer key
+        answer_key = generate_worksheet_from_xml(xml, "answer_key.pdf", include_answers=True)
+        print("Wrote answer key to", answer_key)
 
 
 load_dotenv()

@@ -89,7 +89,7 @@ def make_section_block(desc, examples, styles, content_width):
     ]))
     return tbl
 
-def generate_pdf_from_xml(xml_string: str, output_filename: str = "generated_notes.pdf") -> str:
+def generate_notes_from_xml(xml_string: str, output_filename: str = "generated_notes.pdf") -> str:
     """Generate PDF with boxed content below headers."""
     # Create output directory if it doesn't exist
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
@@ -168,74 +168,3 @@ def generate_pdf_from_xml(xml_string: str, output_filename: str = "generated_not
 
     doc.build(story)
     return output_path
-
-# Sample corrected XML for testing
-sample_xml = """
-<Notes>
-  <Objective>
-    To provide a comprehensive overview of Artificial Neural Networks
-    (ANNs), covering their structure, training, key architectures,
-    challenges, and applications.
-  </Objective>
-  <Context>
-    Artificial Neural Networks (ANNs) are computational models inspired
-    by the human brain, featuring layers of interconnected neurons
-    for processing data.
-  </Context>
-  <Overview>
-    <emphasis type="bold">Artificial Neural Networks</emphasis> are
-    brain-inspired models for complex data processing.
-  </Overview>
-  <KeyConcepts>
-    <Concept>
-      <Name><emphasis type="bold">Neuron</emphasis></Name>
-      <Definition>Fundamental processing unit, computes weighted sum and applies activation.</Definition>
-    </Concept>
-    <Concept>
-      <Name><emphasis type="bold">Backpropagation</emphasis></Name>
-      <Definition>Algorithm to adjust weights based on loss-function gradients.</Definition>
-    </Concept>
-    <Concept>
-      <Name><emphasis type="bold">Activation Function</emphasis></Name>
-      <Definition>Introduces non-linearity to the network's output.</Definition>
-    </Concept>
-    <Concept>
-      <Name><emphasis type="bold">Overfitting</emphasis></Name>
-      <Definition>Model performs well on training data but poorly on unseen data.</Definition>
-    </Concept>
-  </KeyConcepts>
-  <DetailedNotes>
-    <Section>
-      <Title><emphasis type="underline">Core Structure of ANNs</emphasis></Title>
-      <Description>
-        ANNs comprise input, hidden, and output layers with neurons processing data sequentially.
-      </Description>
-      <Examples>
-        <Example><emphasis type="italic">Input Layer: Receives raw data.</emphasis></Example>
-        <Example><emphasis type="italic">Hidden Layer: Processes features internally.</emphasis></Example>
-        <Example><emphasis type="italic">Output Layer: Produces final predictions.</emphasis></Example>
-      </Examples>
-    </Section>
-    <Section>
-      <Title><emphasis type="underline">Training Process and Optimization</emphasis></Title>
-      <Description>
-        Networks learn by minimizing a loss function through weight adjustments via backpropagation.
-      </Description>
-      <Examples>
-        <Example><emphasis type="italic">Loss Function: Mean Squared Error.</emphasis></Example>
-        <Example><emphasis type="italic">Optimizer: Stochastic Gradient Descent.</emphasis></Example>
-        <Example><emphasis type="italic">Algorithm: Backpropagation.</emphasis></Example>
-      </Examples>
-    </Section>
-  </DetailedNotes>
-  <Summary>
-    ANNs are powerful, brain-inspired models with diverse architectures and applications,
-    addressable challenges ensuring
-    <emphasis type="bold"><emphasis type="italic">effective deep learning deployment</emphasis></emphasis>.
-  </Summary>
-</Notes>
-"""
-
-# Generate and return the PDF path
-output_file = generate_pdf_from_xml(sample_xml)
-output_file
