@@ -21,7 +21,6 @@ interface FileData {
     file_id: string;
     file_name: string;
     data: PageData[];
-    video_bytes?: string;
 }
 
 interface RelatedContent {
@@ -40,6 +39,13 @@ interface Problem {
     relatedContent: RelatedContent[];
 }
 
+interface SearchResult {
+    id: string;
+    start_time?: number;
+    end_time?: number;
+    bound_box?: any[];
+}
+
 export default function Workspace({ params }: { params: Promise<{ id: string }> }) {
     const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
@@ -49,7 +55,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
     const [clickedBlock, setClickedBlock] = useState<number>(-1);
     const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null);
     const resolvedParams = use(params);
-    const [searchResults, setSearchResults] = useState<any>(null);
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
     // Fetch file data from backend
     useEffect(() => {
@@ -110,7 +116,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
         }
 
         const data = await response.json();
-        setSearchResults(data); // Store it for display
+        setSearchResults(data.data); // Store it for display
 
     } catch (err) {
         console.error("Error sending block text:", err);
@@ -273,25 +279,28 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
                         </h3>
 
                         <div className="space-y-4">
-                            {currentPageData.text_blocks.map((block, index) => (
+                            {searchResults.map((block, index) => (
                                 <div
                                     key={index}
-                                    className={`p-3 rounded-lg border cursor-pointer transition-all ${clickedBlock === index}
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-primary/20 hover:border-primary/40'
-                                        }`}
-                                    onClick={() => handleBlockClick(index)}
+                                    className={`p-3 rounded-lg border cursor-pointer transition-all border-primary/20 hover:border-primary/40`}
+                                    onClick={() => handleBlockClick(block.id)}
                                 >
                                     <div className="flex items-start space-x-2">
-                                        <div className={`w-4 h-4 rounded-full flex-shrink-0 mt-1 ${clickedBlock === index ? 'bg-red-500' : 'bg-primary/20'
-                                            }`}></div>
+                                        <div className={`w-4 h-4 rounded-full flex-shrink-0 mt-1 bg-primary/20`}></div>
                                         <div className="flex-1">
-                                            <p className="text-sm text-foreground/80 leading-relaxed">
-                                                {block.text}
+                                            <p className="text-lg text-foreground/80 mt-1">
+                                                {block.file_name}
                                             </p>
-                                            <p className="text-xs text-foreground/50 mt-1">
-                                                Block {index + 1}
-                                            </p>
+                                            { block.start && block.end &&
+                                                <p className="text-sm text-foreground/50 leading-relaxed">
+                                                    {block.start} to {block.end}
+                                                </p>
+                                            }
+                                            <button
+                                                className="px-3 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                            >
+                                                View
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

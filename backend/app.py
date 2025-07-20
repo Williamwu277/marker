@@ -437,9 +437,9 @@ def search_embeddings():
                 
             if document.metadata['type'] != 'video':
                 document.metadata['bound_box'] = file_parser.find_bounding_box(filtered_name=filter_name, similar_result=document)
-                data.append({"file_id": document_id, "bound_box": document.metadata["bound_box"]})
+                data.append({"file_name": document.metadata["document_name"], "file_id": document_id, "bound_box": document.metadata["bound_box"]})
             else:
-                data.append({"file_id": document_id, "start_time": document.metadata["start_time"], "end_time": document.metadata["end_time"]})
+                data.append({"file_name": document.metadata["document_name"], "file_id": document_id, "start_time": document.metadata["start_time"], "end_time": document.metadata["end_time"]})
 
         return jsonify({"sucecss": True, "query": query, "results": data})
     except Exception as e:
