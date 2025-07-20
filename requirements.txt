@@ -19,3 +19,4 @@ transformers
 pytesseract
 Pillow
 google-cloud-vision
+reportlab

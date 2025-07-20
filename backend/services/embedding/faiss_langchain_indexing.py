@@ -2,6 +2,7 @@ import faiss
 import twelvelabs
 import numpy as np
 import os
+import traceback
 
 from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
@@ -41,6 +42,7 @@ class FAISS_INDEX:
 
     def add_video_chunks_to_index(self, segements: list[twelvelabs.models.embed.SegmentEmbedding], file_path:str):
         try: 
+            print(segements)
             for i in range(len(segements)):
                 embedding_object = segements[i]
                 start = embedding_object.start_offset_sec
@@ -57,6 +59,7 @@ class FAISS_INDEX:
             print(f'Sucessfully added {len(segements)} audio segements to index')
         except Exception as e: 
             print('Adding chunks to index failed')
+            traceback.print_exc()
             return {
                 "status": 500,
                 "error": e

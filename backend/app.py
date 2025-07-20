@@ -8,12 +8,16 @@ from services.embedding.chunking import NoteClusterer
 from backend.services.embedding.faiss_langchain_indexing import FAISS_INDEX as FAISSIndexer
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
 from services.embedding.video_summary import VideoSummarizer
+from services.embedding.video_summary import VideoSummarizer
 
+# Load environment variables
+load_dotenv(override=True)
 # Load environment variables
 load_dotenv(override=True)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+gemini = GeminiService()
 gemini = GeminiService()
 
 # Initialize the PDF parser
@@ -28,6 +32,7 @@ ALLOWED_EXTENSIONS = {'pdf', 'png'}
 text_chunker = NoteClusterer()
 faiss_index = FAISSIndexer()
 embedder = TwelveLabsEmbeddings()
+video_summarizer = VideoSummarizer(api_key=os.environ.get("TWELVE_LABS_API"))
 video_summarizer = VideoSummarizer(api_key=os.environ.get("TWELVE_LABS_API"))
 
 def get_file_extension(filename):
@@ -56,10 +61,14 @@ def upload_file():
         
         file = request.files['file']
         file_name = request.form.get('file_name')
+        file_usage = request.form.get('file_usage')
         
         # Validate inputs
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+
+        if not file_usage or file_usage != "worksheet":
+            return jsonify({'error': 'File usage needs to be "worksheet"'}), 400
         
         if not file_name:
             return jsonify({'error': 'File name is required'}), 400
@@ -74,9 +83,9 @@ def upload_file():
         file_id = None
         file_extension = get_file_extension(file_name)
         if file_extension == 'pdf':
-            file_id = file_parser.upload_pdf(file_bytes, file_name)
+            file_id = file_parser.upload_pdf(file_bytes, file_name, file_usage)
         elif file_extension == 'png':
-            file_id = file_parser.upload_png(file_bytes, file_name)
+            file_id = file_parser.upload_png(file_bytes, file_name, file_usage)
         
         return jsonify({
             'success': True,
@@ -136,9 +145,13 @@ def upload_notes():
         
         file = request.files['file']
         file_name = request.form.get('file_name')
+        file_usage = request.form.get('file_usage')
 
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+
+        if not file_usage or file_usage != "notes":
+            return jsonify({'error': 'File usage needs to be "notes"'}), 400
 
         if not file_name:
             return jsonify({'error': 'File name is required'}), 400
@@ -149,7 +162,7 @@ def upload_notes():
         file_bytes = file.read()
 
         # Use your Parser to extract the info you want
-        file_id = file_parser.upload_pdf(file_bytes, file_name)
+        file_id = file_parser.upload_pdf(file_bytes, file_name, file_usage)
         file_path = file_parser.data[file_id]['temp_path']
 
         chunks = text_chunker.process_pdf(file_path=file_path)
@@ -171,7 +184,8 @@ def upload_notes():
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
-            'text_summary': full_text
+            'text_summary': full_text,
+            'file_usage': file_data['file_usage']
         }), 200
 
     except Exception as e:
@@ -190,9 +204,13 @@ def upload_video():
 
         file = request.files['file']
         file_name = request.form.get('file_name')
+        file_usage = request.form.get('file_usage')
 
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+        
+        if not file_usage or file_usage != "video":
+            return jsonify({'error': 'File usage needs to be "video"'}), 400
 
         if not file_name:
             return jsonify({'error': 'File name is required'}), 400
@@ -203,7 +221,7 @@ def upload_video():
         file_bytes = file.read()
 
         # Store using parser
-        file_id = file_parser.upload_video(file_bytes, file_name)
+        file_id = file_parser.upload_video(file_bytes, file_name, file_usage)
         file_data = file_parser.get_file(file_id)
         file_path = file_data['temp_path']
 
@@ -217,6 +235,11 @@ def upload_video():
         video_summary_id.wait_until_ready()
         video_summary = video_summarizer.summarize_video(video_summary_id)
 
+        # Summarize video
+        video_summary_id = video_summarizer.create_task(file_path)
+        video_summary_id.wait_until_ready()
+        video_summary = video_summarizer.summarize_video(video_summary_id)
+
         return jsonify({
             'success': True,
             'file_id': file_id,
@@ -224,7 +247,8 @@ def upload_video():
             'file_type': file_data['file_type'],
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
-            'data': file_data['pages']  # Usually empty for videos
+            'data': file_data['pages'],
+            'file_usage': file_data['file_usage'],
             'video_summary': video_summary
         }), 200
 
@@ -247,7 +271,8 @@ def get_all_files():
                 'type': 'video' if file['file_type'] == 'video' else 'pdf' if file['file_type'] == 'pdf' else 'png',
                 'size': f'{round(file['size'] / 1024 / 1024, 2)} MB',
                 'uploadedAt': file['uploaded_at'],
-                'thumbnail': None
+                'thumbnail': None,
+                'file_usage': file['file_usage']
             }
             for file in files
         ]
@@ -262,6 +287,71 @@ def get_all_files():
 
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/generate_practice_questions/<file_id>', methods=['POST'])
+def generate_practice_questions(file_id):
+    """
+    Generate practice questions from parsed file content using text summary
+    Args:
+        file_id: ID of the parsed file
+    Returns:
+        JSON response with status and file paths
+    """
+    try:
+        # Get file data from parser
+        file_data = file_parser.get_file(file_id)
+        if not file_data:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Get text summary directly
+        text_summary = file_data['text_summary']
+        if not text_summary:
+            return jsonify({'error': 'No text content found in file'}), 400
+        
+        # Generate practice questions
+        gemini.generate_practice_questions(text_summary)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Practice questions generated successfully',
+            'worksheet_path': 'backend/output/worksheet.pdf',
+            'answer_key_path': 'backend/output/answer_key.pdf'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating practice questions: {str(e)}'}), 500
+
+@app.route('/generate_notes/<file_id>', methods=['POST'])
+def generate_notes(file_id):
+    """
+    Generate study notes from parsed file content using text summary
+    Args:
+        file_id: ID of the parsed file
+    Returns:
+        JSON response with status and file path
+    """
+    try:
+        # Get file data from parser
+        file_data = file_parser.get_file(file_id)
+        if not file_data:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Get text summary directly
+        text_summary = file_data['text_summary']
+        if not text_summary:
+            return jsonify({'error': 'No text content found in file'}), 400
+        
+        # Generate notes
+        gemini.generate_notes(text_summary)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notes generated successfully',
+            'notes_path': 'backend/output/notes.pdf'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
 
 @app.route('/generate_practice_questions/<file_id>', methods=['POST'])
 def generate_practice_questions(file_id):

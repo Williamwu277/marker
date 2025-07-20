@@ -17,9 +17,12 @@ from langchain_core.documents import Document
 load_dotenv(override=True)
 api_key = os.environ.get("TWELVE_LABS_API")
 engine_id = os.environ.get("ENGINE_ID")
+api_key = os.environ.get("TWELVE_LABS_API")
+engine_id = os.environ.get("ENGINE_ID")
 
 class Parser:
 
+    def __init__(self, gClient):
     def __init__(self, gClient):
 
         credentials = service_account.Credentials.from_service_account_file(
@@ -79,15 +82,15 @@ class Parser:
     Given a png file in bytes, upload the file to the database and parse the text
     Returns the generated ID
     '''
-    def upload_png(self, png_bytes, file_name):
+    def upload_png(self, png_bytes, file_name, file_usage):
         images = [Image.open(io.BytesIO(png_bytes))]
-        return self.extract_text(images, file_name, len(png_bytes))
+        return self.extract_text(images, file_name, len(png_bytes), file_usage)
     
     '''
     Given a pdf name and its form in bytes, upload the pdf to the database and parse the text
     Returns the generated ID
     '''
-    def upload_pdf(self, pdf_bytes, pdf_name):
+    def upload_pdf(self, pdf_bytes, pdf_name, file_usage):
         temp_pdf_path = self.save_temp_pdf(pdf_bytes)
 
         images = convert_from_bytes(pdf_bytes, dpi=300)
@@ -95,17 +98,22 @@ class Parser:
             raise ValueError("PDF must have less than 5 pages")
         
         
-        file_id = self.extract_text(images, pdf_name, len(pdf_bytes))
+        file_id = self.extract_text(images, pdf_name, len(pdf_bytes), file_usage)
         self.data[file_id]["temp_path"] = temp_pdf_path
 
         return file_id
     
-    def upload_video(self, video_bytes, file_name):
+    def upload_video(self, video_bytes, file_name, file_usage):
         # Save to temp file
         temp_video_path = self.save_temp_video(video_bytes)
 
         # Generate unique ID
         file_id = self.generate_random_id()
+
+        upload_url = "https://api.twelvelabs.io/v1.3/videos"
+        headers = {"x-api-key": api_key}
+        files = {"file": open(video_path, "rb")}
+        data = {"engine_id": engine_id}
 
         upload_url = "https://api.twelvelabs.io/v1.3/videos"
         headers = {"x-api-key": api_key}
@@ -120,7 +128,8 @@ class Parser:
             "size": len(video_bytes),
             "uploaded_at": datetime.now().isoformat(),
             "temp_path": temp_video_path,
-            "pages": []  # Keep for consistency with other file types
+            "pages": [],
+            "file_usage": file_usage
         }
 
         return file_id
@@ -129,7 +138,7 @@ class Parser:
     Given a list of images, extract the text from the images and store it
     Returns the generated ID
     '''
-    def extract_text(self, images, file_name, file_size):
+    def extract_text(self, images, file_name, file_size, file_usage):
         # Generate a unique ID for this PDF
         file_id = self.generate_random_id()
         
@@ -140,7 +149,8 @@ class Parser:
             "file_type": "pdf" if file_name.endswith('.pdf') else "png",
             "size": file_size,
             "uploaded_at": datetime.now().isoformat(),
-            "pages": []
+            "pages": [],
+            "file_usage": file_usage
         }
         
         # for each page
