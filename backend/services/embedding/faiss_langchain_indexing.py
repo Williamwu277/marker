@@ -71,7 +71,7 @@ class FAISS_INDEX:
         document_chunks = [Document(**chunk) for chunk in chunks]
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
-    def search(self, query:str, doc_name:str, most_similar:bool=False):
+    def search(self, query:str, doc_name:str, most_similar:bool=False) -> Document | list[Document]:
         results = self.vector_store.similarity_search(
             query=query,
             k=self.k_results,
@@ -83,6 +83,9 @@ class FAISS_INDEX:
             return results_sorted[0]
         
         return results
+    
+    def delete(self, ids:list[str]):
+        self.vector_store.delete(ids=ids)
 
 if __name__ == '__main__':
     # use case 
