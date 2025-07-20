@@ -95,4 +95,51 @@ class GeminiClient:
                 filtered_blocks.append(blocks[i])
         print(*filtered_blocks)
         return filtered_blocks
+    
+    def format_extracted_text(self, raw_text: str) -> str:
+        """
+        Format extracted text blocks into a coherent educational summary.
+        Args:
+            text_blocks: List of dicts with {'text': str, 'bounding_box': list} from parser
+        Returns:
+            str: Formatted text summary suitable for worksheet/notes generation
+        """
+        print("Formatting extracted text with Gemini...")
         
+        formatting_prompt = """
+        Format this extracted text into clear, structured educational content.
+        Follow these guidelines:
+
+        1. Clean and organize the content:
+        - Remove irrelevant headers, footers, page numbers
+        - Fix any OCR errors or formatting issues
+        - Ensure proper paragraph breaks
+        - Preserve mathematical notation and symbols
+
+        2. Structure the content:
+        - Organize into logical sections
+        - Highlight key concepts and definitions
+        - Preserve important examples
+        - Maintain natural flow between ideas
+
+        3. Format rules:
+        - Use complete sentences
+        - Keep paragraph structure
+        - Preserve technical terminology
+        - Maintain academic tone
+
+        Original text:
+        {text}
+
+        Return only the formatted content, no additional markup or instructions.
+        """
+
+        try:
+            formatted_content = self.generate_content({
+                "contents": formatting_prompt.format(text=raw_text)
+            })
+            return formatted_content.strip()
+        except Exception as e:
+            print(f"Text formatting failed: {e}")
+            return raw_text  # Return original text if formatting fails
+
