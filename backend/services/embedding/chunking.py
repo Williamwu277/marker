@@ -139,6 +139,7 @@ class NoteClusterer:
     def get_doc_name(self, file_path:str) -> str:
         return file_path.split('/')[-1]
 
+
 if __name__ == "__main__":
     # Hardcode your PDF path and document name here
     pdf_path = "backend/services/sample_pdf.pdf"
