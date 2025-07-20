@@ -1,7 +1,6 @@
 # services/gemini_service.py
 
 import json
-import logging
 from dotenv import load_dotenv
 from typing import List, Dict, Any
 
@@ -16,8 +15,6 @@ sys.path.insert(0, project_root)
 from backend.utils.gemini_client import GeminiClient
 from backend.services.pdf_generation import generate_pdf_from_xml
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class GeminiService:
@@ -26,29 +23,26 @@ class GeminiService:
     practice questions, and written‐work analysis.
     """
 
-    def __init__(self, model: str = None):
-        """
-        Args:
-          model: Optional override of the Gemini model name.
-        """
-        self.client = GeminiClient(model=model) if model else GeminiClient()
+    def __init__(self):
+        self.client = GeminiClient() 
 
-    def generate_notes(self, topic: str, context: str) -> Dict[str, Any]:
-        """
-        Generate JSON‐structured notes from the full context.
-        Returns a dict (parsed JSON) or {'raw': text} on parse failure.
-        """
-        logger.debug(f"Generating notes for topic={topic!r}, context length={len(context)}")
+    def generate_notes(self, topic: str, context: str):
         xml = self.client.generate_notes(topic, context)
         print(xml)
-        output = generate_pdf_from_xml(xml, output_filename="output.pdf")
+        output = generate_pdf_from_xml(xml, output_filename="notes.pdf")
         print("Wrote PDF to", output)
+
+    def generate_practice_questions(self, topic: str, context: str):
+        xml = self.client.generate_practice_questions(topic, context)
+        print(xml)
+        #output = generate_pdf_from_xml(xml, output_filename="questions.pdf")
+        #print("Wrote PDF to", output)
 
 
 load_dotenv()
 gemini = GeminiService()
 
-gemini.generate_notes("Artificial Neural Networks", """Artificial neural networks (ANNs) are computational models inspired by the layered structure of the human brain. At their core, ANNs consist of an input layer, one or more hidden layers, and an output layer. Each layer contains neurons (nodes) that compute a weighted sum of their inputs, apply a nonlinear activation function (e.g., ReLU, sigmoid, tanh), and pass the result to the next layer. During training, the network minimizes a loss function—such as mean squared error for regression or cross‑entropy for classification—by adjusting weights via backpropagation and an optimization algorithm (e.g., stochastic gradient descent, Adam, RMSProp).
+gemini.generate_practice_questions("Artificial Neural Networks", """Artificial neural networks (ANNs) are computational models inspired by the layered structure of the human brain. At their core, ANNs consist of an input layer, one or more hidden layers, and an output layer. Each layer contains neurons (nodes) that compute a weighted sum of their inputs, apply a nonlinear activation function (e.g., ReLU, sigmoid, tanh), and pass the result to the next layer. During training, the network minimizes a loss function—such as mean squared error for regression or cross‑entropy for classification—by adjusting weights via backpropagation and an optimization algorithm (e.g., stochastic gradient descent, Adam, RMSProp).
 
 
 Key architecture variants include:

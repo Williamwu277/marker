@@ -1,15 +1,70 @@
 gemini:
   practice_questions:
     prompt: |
-      Generate {num_questions} practice questions about {topic}.
-      Each question should:
-      - Be clear and concise
-      - Cover key concepts
-      - Include the correct answer
-      - Vary in difficulty
-      Format each question with:
-      1. Question
-      2. Answer
+      <Instructions>
+        You are a senior domain expert in <Topic>{topic}</Topic>.  
+        Your task is to generate a diverse set of practice questions in strictly valid XML based on the provided context.  
+        **Do not** include any explanation or text outside of the '<PracticeQuestions>' root element.  
+
+        **Core Formatting Rules:**  
+          - Annotate each '<Question>' with 'type="multiple_choice"' or 'type="long_answer"' and a 'difficulty="easy|medium|hard"' attribute.  
+          - For multiple‑choice, list options under '<Choices>' with '<Choice correct="true|false">...</Choice>'.  
+          - Provide the correct response in an '<Answer>' element.  
+
+        **XML Validation Step (MUST):**  
+          1. After you construct the XML, perform a full well-formedness check:  
+            - Every opening tag has a matching closing tag.  
+            - Tags are properly nested (no overlaps).  
+            - Attribute values are quoted and escape any '<', '>', or '&' within text.  
+          2. If you find any error, correct it before returning.  
+          3. Only return the final, validated XML-nothing else.
+      </Instructions>
+
+      <Schema>
+        <PracticeQuestions>
+          <Question type="multiple_choice" difficulty="easy">
+            <QuestionText>...</QuestionText>
+            <Choices>
+              <Choice correct="false">...</Choice>
+              <Choice correct="true">...</Choice>
+              <!-- Repeat for each option -->
+            </Choices>
+            <Answer>...</Answer>
+          </Question>
+          <Question type="long_answer" difficulty="hard">
+            <QuestionText>...</QuestionText>
+            <Answer>...</Answer>
+          </Question>
+          <!-- Repeat for each question -->
+        </PracticeQuestions>
+      </Schema>
+
+      <Requirements>
+        <Count minItems="5" maxItems="10">
+          Generate between 5 and 10 questions.
+        </Count>
+        <Variety>
+          Include at least two <Question type="multiple_choice"> and two <Question type="long_answer">.
+        </Variety>
+        <Coverage>
+          Questions must cover the key concepts from the context.
+        </Coverage>
+        <Clarity>
+          Each question and answer must be clear and concise.
+        </Clarity>
+        <Difficulty mix="easy,medium,hard">
+          Vary difficulty across questions.
+        </Difficulty>
+        <OutputFormat>
+          Valid XML only-no markdown, no prose outside '<PracticeQuestions>'.  
+          All question text in '<QuestionText>', options in '<Choices>', correct answer in '<Answer>'.
+        </OutputFormat>
+      </Requirements>
+
+      <Context>
+        {context}
+      </Context>
+
   notes:
     prompt: |
       <Instructions>
@@ -80,18 +135,21 @@ gemini:
 
       <Context>
         {context}
-      </Context>
-    xml_verification: |
+      </Context> 
+
+openai:
+  xml_verification: 
+    notes: |
       You are an XML validator for study notes. Validate and fix the following XML to ensure:
       1. Well-formed XML structure
       2. Proper nesting of elements
       3. Valid emphasis tags (bold, italic, underline)
       4. Consistent formatting
       5. Complete sections (Objective, Context, Overview, KeyConcepts, DetailedNotes, Summary)
-      
+
       If the XML is valid, return it unchanged.
       If there are issues, fix them while preserving the content and return the corrected XML.
-      
+
       Expected structure:
       <Notes>
         <Objective>Brief learning objective</Objective>
@@ -116,3 +174,5 @@ gemini:
       </Notes>
 
       {xml} 
+    questions: |
+
