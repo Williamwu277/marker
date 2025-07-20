@@ -7,7 +7,6 @@ from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from .twelvelabs_embedding import TwelveLabsEmbeddings
-from .chunking import NoteClusterer
 
 
 class FAISS_INDEX:
@@ -86,24 +85,24 @@ if __name__ == '__main__':
     # use case 
 
     #### videos ######
-    # test_index = FAISS_INDEX()
-    # embedder = TwelveLabsEmbeddings()
-    # video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
-    # doc_name = test_index.get_video_name(file_path=video_path)
+    test_index = FAISS_INDEX()
+    embedder = TwelveLabsEmbeddings()
+    video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
+    doc_name = test_index.get_video_name(file_path=video_path)
 
-    # chunk_embeddings = embedder.embed_video(video=video_path)
-    # test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
-    # print(test_index.search(query='what design elements are in this', doc_name=video_path, most_similar=False))
+    chunk_embeddings = embedder.embed_video(video=video_path)
+    test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
+    print(test_index.search(query='what design elements are in this', doc_name=video_path, most_similar=False))
 
     #### text ####
-    text_chunker = NoteClusterer()
-    test_index = FAISS_INDEX()
-    file_path = 'backend/services/sample_pdf.pdf'
-    chunks = text_chunker.process_pdf(file_path=file_path)
+    # text_chunker = NoteClusterer()
+    # test_index = FAISS_INDEX()
+    # file_path = 'backend/services/sample_pdf.pdf'
+    # chunks = text_chunker.process_pdf(file_path=file_path)
 
-    doc_name = text_chunker.get_doc_name(file_path=file_path)
-    test_index.add_text_chunks_to_index(chunks=chunks)
-    print(test_index.search(query='what awards are mentioned'), doc_name)
+    # doc_name = text_chunker.get_doc_name(file_path=file_path)
+    # test_index.add_text_chunks_to_index(chunks=chunks)
+    # print(test_index.search(query='what awards are mentioned'), doc_name)
 
 
 
