@@ -11,9 +11,12 @@ from pdf2image import convert_from_bytes, convert_from_path
 from dotenv import load_dotenv
 from PIL import Image
 from .gemini_client import GeminiClient
+import requests
+import time
 
 load_dotenv(override=True)
-
+api_key = os.environ.get("TWELVE_LABS_API")
+engine_id = os.environ.get("ENGINE_ID")
 
 class Parser:
 
@@ -33,6 +36,8 @@ class Parser:
                 "file_type": "video" or "pdf" or "png",
                 "size": "size_in_bytes",
                 "uploaded_at": "date_uploaded",
+                "temp_path": "path_to_temp_file",  # Only for pdfs and videos
+                "text_summary": "full_text" or "video_summary", 
                 "pages": [
                     {
                         "image": "base64_encoded_image",
@@ -101,6 +106,11 @@ class Parser:
 
         # Generate unique ID
         file_id = self.generate_random_id()
+
+        upload_url = "https://api.twelvelabs.io/v1.3/videos"
+        headers = {"x-api-key": api_key}
+        files = {"file": open(video_path, "rb")}
+        data = {"engine_id": engine_id}
 
         # Store metadata
         self.data[file_id] = {

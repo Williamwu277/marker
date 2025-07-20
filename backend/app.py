@@ -6,6 +6,7 @@ from services.embedding.faiss_longchain_indexing import FAISS_INDEX as FAISSInde
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
 
 
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -142,6 +143,10 @@ def upload_notes():
 
         # CHUNK
         chunks = text_chunker.process_pdf(file_path=file_path)
+        
+        full_text = ""
+        for chunk in chunks:
+            full_text += chunk['page_text'] + " "
         faiss_index.add_text_chunks_to_index(chunks=chunks)
         file_data = file_parser.get_file(file_id)
 
@@ -152,7 +157,8 @@ def upload_notes():
             'file_type': file_data['file_type'],
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
-            'data': file_data['pages']
+            'data': file_data['pages'],
+            'text_summary': full_text
         }), 200
 
     except Exception as e:
