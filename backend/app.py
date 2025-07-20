@@ -17,7 +17,7 @@ CORS(app)  # Enable CORS for all routes
 gemini = GeminiService()
 
 # Initialize the PDF parser
-file_parser = Parser(gemini)
+file_parser = Parser(gemini.client)
 
 ALLOWED_EXTENSIONS = {'pdf', 'png'}
 
