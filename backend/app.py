@@ -1,6 +1,7 @@
-from dotenv import load_dotenv
 import os
-from flask import Flask, request, jsonify
+import traceback
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from utils.parser import Parser
 from services.gemini_service import GeminiService
@@ -122,14 +123,15 @@ def get_file():
             'file_id': file_id,
             'file_name': file_data['file_name'],
             'file_type': file_data['file_type'],
-            'size': f'{round(file_data['size'] / 1024 / 1024, 2)} MB',
+            'size': f'{round(file_data["size"] / 1024 / 1024, 2)} MB',
             'uploaded_at': file_data['uploaded_at'],
-            'data': file_data['pages']
+            'data': file_data['pages'],
         }), 200
         
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @app.route('/upload_notes', methods=['POST'])
@@ -181,11 +183,11 @@ def upload_notes():
             'file_id': file_id,
             'file_name': file_data['file_name'],
             'file_type': file_data['file_type'],
-            'size': f'{file_data['size'] / 1024 / 1024} MB',
+            'size': f'{file_data["size"] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
             'text_summary': full_text,
-            'file_usage': file_data['file_usage']
+            'file_usage': file_data['file_usage'],
         }), 200
 
     except Exception as e:
@@ -241,14 +243,15 @@ def upload_video():
             'file_id': file_id,
             'file_name': file_data['file_name'],
             'file_type': file_data['file_type'],
-            'size': f'{file_data['size'] / 1024 / 1024} MB',
+            'size': f'{file_data["size"] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
             'file_usage': file_data['file_usage'],
-            'video_summary': video_summary
+            'video_summary': video_summary,
         }), 200
 
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @app.route('/get_all_files', methods=['GET'])
@@ -265,7 +268,7 @@ def get_all_files():
                 'id': file['id'],
                 'name': file['file_name'],
                 'type': 'video' if file['file_type'] == 'video' else 'pdf' if file['file_type'] == 'pdf' else 'png',
-                'size': f'{round(file['size'] / 1024 / 1024, 2)} MB',
+                'size': f'{round(file["size"] / 1024 / 1024, 2)} MB',
                 'uploadedAt': file['uploaded_at'],
                 'thumbnail': None,
                 'file_usage': file['file_usage']

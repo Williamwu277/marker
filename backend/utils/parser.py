@@ -23,6 +23,7 @@ class Parser:
             os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         )
         self.client = vision.ImageAnnotatorClient(credentials=credentials)
+        self.gClient = gClient
         
         '''
         self.data = {
@@ -34,6 +35,9 @@ class Parser:
                 "uploaded_at": "date_uploaded",
                 "temp_path": "path_to_temp_file",  # Only for pdfs and videos
                 "text_summary": "full_text" or "video_summary", 
+                "file_usage": "notes" or "worksheet" or "video",
+                "video_bytes"(?): "video_bytes",
+                "pages"(?): [
                 "pages": [
                     {
                         "image": "base64_encoded_image",
@@ -113,7 +117,8 @@ class Parser:
             "uploaded_at": datetime.now().isoformat(),
             "temp_path": temp_video_path,
             "pages": [],
-            "file_usage": file_usage
+            "file_usage": file_usage,
+            "video_bytes": video_bytes
         }
 
         return file_id
@@ -134,7 +139,8 @@ class Parser:
             "size": file_size,
             "uploaded_at": datetime.now().isoformat(),
             "pages": [],
-            "file_usage": file_usage
+            "file_usage": file_usage,
+            "video_bytes": None
         }
         
         # for each page

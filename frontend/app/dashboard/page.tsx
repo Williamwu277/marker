@@ -27,6 +27,7 @@ interface FileData {
     data: any[];
     text_summary?: string;
     file_usage?: string;
+    video_bytes?: string;
 }
 
 export default function Dashboard() {
@@ -140,7 +141,7 @@ export default function Dashboard() {
         setIsLoadingModal(true);
         setIsModalOpen(true);
         setModalType(item.file_usage === 'video' ? 'video' : 'notes');
-
+        
         try {
             const response = await fetch('http://localhost:5099/get_file', {
                 method: 'POST',
@@ -157,7 +158,52 @@ export default function Dashboard() {
             }
 
             const fileData: FileData = await response.json();
-            setModalContent(fileData);
+            console.log(fileData);
+            
+            // If it's a video, fetch the video bytes before setting modal content
+            if (item.file_usage === 'video') {
+                try {
+                    const videoResponse = await fetch('http://localhost:5099/get_video_bytes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ file_id: item.id }),
+                    });
+
+                    if (videoResponse.ok) {
+                        const blob = await videoResponse.blob();
+                        const reader = new FileReader();
+                        
+                        reader.onload = () => {
+                            const base64 = reader.result as string;
+                            const base64Data = base64.split(',')[1];
+                            
+                            // Add video bytes to the file data
+                            const enrichedFileData = {
+                                ...fileData,
+                                video_bytes: base64Data
+                            };
+                            setModalContent(enrichedFileData);
+                        };
+
+                        reader.onerror = () => {
+                            console.error('Failed to read video data');
+                            setModalContent(fileData);
+                        };
+
+                        reader.readAsDataURL(blob);
+                    } else {
+                        console.error('Failed to fetch video bytes');
+                        setModalContent(fileData);
+                    }
+                } catch (videoError) {
+                    console.error('Error fetching video bytes:', videoError);
+                    setModalContent(fileData);
+                }
+            } else {
+                setModalContent(fileData);
+            }
         } catch (error) {
             alert(`Failed to load file: ${error instanceof Error ? error.message : 'Unknown error'}`);
             setIsModalOpen(false);

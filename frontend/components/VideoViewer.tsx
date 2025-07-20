@@ -1,11 +1,25 @@
 'use client';
 
 interface VideoViewerProps {
-    data: any[];
+    data: FileData;
     isLoading: boolean;
 }
 
+interface FileData {
+    success: boolean;
+    file_id: string;
+    file_name: string;
+    file_type: string;
+    size: string;
+    uploaded_at: string;
+    data: any[];
+    text_summary?: string;
+    file_usage?: string;
+    video_bytes?: string;
+}
+
 export default function VideoViewer({ data, isLoading }: VideoViewerProps) {
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -15,7 +29,7 @@ export default function VideoViewer({ data, isLoading }: VideoViewerProps) {
         );
     }
 
-    if (!data || data.length === 0) {
+    if (!data) {
         return (
             <div className="text-gray-500 text-center py-8">
                 <div className="text-4xl mb-4">🎬</div>
@@ -24,43 +38,42 @@ export default function VideoViewer({ data, isLoading }: VideoViewerProps) {
         );
     }
 
+    const isVideoFile = data.file_type.toLowerCase().includes('video');
+
     return (
-        <div className="space-y-4">
-            {data.map((page: any, index: number) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-medium text-gray-700">Frame {index + 1}</h3>
-                        <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                            {page.images?.length || 0} frames
-                        </span>
-                    </div>
-                    
-                    {page.images && page.images.length > 0 ? (
-                        <div className="space-y-3">
-                            {page.images.map((image: string, imgIndex: number) => (
-                                <div key={imgIndex} className="bg-white rounded-lg p-2 shadow-sm">
-                                    <div className="relative">
-                                        <img 
-                                            src={`data:image/png;base64,${image}`}
-                                            alt={`Video Frame ${index + 1} - ${imgIndex + 1}`}
-                                            className="w-full h-auto rounded-lg"
-                                            loading="lazy"
-                                        />
-                                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                                            Frame {imgIndex + 1}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+        <div className="border border-gray-200 rounded-lg bg-gray-50">
+            {isVideoFile && (
+                <div className="bg-white rounded-lg p-2 shadow-sm">
+                    {data.video_bytes ? (
+                        <div className="max-w-2xl mx-auto">
+                            <video 
+                                controls
+                                className="w-full h-auto rounded-lg"
+                                preload="metadata"
+                            >
+                                <source 
+                                    src={`data:video/mp4;base64,${data.video_bytes}`} 
+                                    type="video/mp4" 
+                                />
+                                Your browser does not support the video tag.
+                            </video>
                         </div>
                     ) : (
-                        <div className="text-gray-400 text-center py-6 bg-white rounded-lg">
-                            <div className="text-2xl mb-2">🎥</div>
-                            <p className="text-sm">No video frames available</p>
+                        <div className="text-gray-400 text-center py-8">
+                            <div className="text-3xl mb-3">🎥</div>
+                            <p className="text-sm">No video data available</p>
+                            <p className="text-xs text-gray-300 mt-1">Video bytes not found</p>
                         </div>
                     )}
                 </div>
-            ))}
+            )}
+
+            {data.text_summary && (
+                <div className="mt-4 bg-white rounded-lg p-3 shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Summary</h4>
+                    <p className="text-sm text-gray-600">{data.text_summary}</p>
+                </div>
+            )}
         </div>
     );
 } 
