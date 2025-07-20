@@ -85,14 +85,18 @@ if __name__ == '__main__':
     # use case 
 
     #### videos ######
-    test_index = FAISS_INDEX()
-    embedder = TwelveLabsEmbeddings()
-    video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
-    doc_name = test_index.get_video_name(file_path=video_path)
+    if __name__ == "__main__":
+        import requests
 
-    chunk_embeddings = embedder.embed_video(video=video_path)
-    test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
-    print(test_index.search(query='what design elements are in this', doc_name=video_path, most_similar=False))
+        api_key = "tlk_2AEMGCH2V8PG6W2YNRK9A30KDFXS"
+        url = "https://api.twelvelabs.io/v1.3/engines"
+        headers = {"x-api-key": api_key}
+
+        response = requests.get(url, headers=headers)
+        engines = response.json()
+
+        for engine in engines:
+            print(f"Name: {engine['name']}, ID: {engine['id']}, Type: {engine['type']}")
 
     #### text ####
     # text_chunker = NoteClusterer()
