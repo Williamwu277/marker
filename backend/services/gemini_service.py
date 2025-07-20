@@ -16,7 +16,7 @@ from backend.services.worksheet_generation import generate_worksheet_from_xml
 
 class GeminiService:
     """
-    Simple wrapper around GeminiClient for generating notes,
+    Simple wraxpper around GeminiClient for generating notes,
     practice questions, and written‐work analysis.
     """
 
@@ -78,54 +78,3 @@ class GeminiService:
                 generation_attempts += 1
                 if generation_attempts == max_attempts:
                     raise Exception("Failed to generate answer key after maximum attempts")
-
-load_dotenv()
-gemini = GeminiService()
-
-gemini.generate_practice_questions("""Artificial neural networks (ANNs) are computational models inspired by the layered structure of the human brain. At their core, ANNs consist of an input layer, one or more hidden layers, and an output layer. Each layer contains neurons (nodes) that compute a weighted sum of their inputs, apply a nonlinear activation function (e.g., ReLU, sigmoid, tanh), and pass the result to the next layer. During training, the network minimizes a loss function—such as mean squared error for regression or cross‑entropy for classification—by adjusting weights via backpropagation and an optimization algorithm (e.g., stochastic gradient descent, Adam, RMSProp).
-
-
-Key architecture variants include:
-- **Feedforward Networks**: Data flows in one direction from input to output; simplest form of ANN.  
-- **Convolutional Neural Networks (CNNs)**: Use convolutional layers to process spatial data like images, leveraging local connectivity and weight sharing.  
-- **Recurrent Neural Networks (RNNs)**: Maintain internal state (memory) across sequences; useful for time‑series or language data.  
-- **Transformers**: Employ self‑attention mechanisms to model long‑range dependencies without recurrence.
-
-
-Common training challenges and mitigation strategies:
-- **Overfitting**: When a model captures noise in the training set and fails to generalize.  
-  - *Regularization*: L1/L2 weight penalties to constrain complexity.  
-  - *Dropout*: Randomly deactivate neurons during training to build robustness.  
-  - *Early Stopping*: Halt training when validation performance plateaus.  
-- **Vanishing/Exploding Gradients**: Gradients become too small or large in deep networks.  
-  - *Weight Initialization*: Methods like Xavier/He initialization.  
-  - *Gradient Clipping*: Cap gradient values to a fixed range.  
-- **Hyperparameter Tuning**: Learning rate, batch size, number of layers/neurons—often performed via grid search, random search, or Bayesian optimization.
-
-
-Typical use cases span computer vision (image classification, object detection), natural language processing (machine translation, sentiment analysis), and reinforcement learning (game playing, robotics). Hardware acceleration using GPUs and distributed training across multiple machines has become essential for scaling up deep learning workloads.
-""")
-
-gemini.generate_notes("""Artificial neural networks (ANNs) are computational models inspired by the layered structure of the human brain. At their core, ANNs consist of an input layer, one or more hidden layers, and an output layer. Each layer contains neurons (nodes) that compute a weighted sum of their inputs, apply a nonlinear activation function (e.g., ReLU, sigmoid, tanh), and pass the result to the next layer. During training, the network minimizes a loss function—such as mean squared error for regression or cross‑entropy for classification—by adjusting weights via backpropagation and an optimization algorithm (e.g., stochastic gradient descent, Adam, RMSProp).
-
-
-Key architecture variants include:
-- **Feedforward Networks**: Data flows in one direction from input to output; simplest form of ANN.  
-- **Convolutional Neural Networks (CNNs)**: Use convolutional layers to process spatial data like images, leveraging local connectivity and weight sharing.  
-- **Recurrent Neural Networks (RNNs)**: Maintain internal state (memory) across sequences; useful for time‑series or language data.  
-- **Transformers**: Employ self‑attention mechanisms to model long‑range dependencies without recurrence.
-
-
-Common training challenges and mitigation strategies:
-- **Overfitting**: When a model captures noise in the training set and fails to generalize.  
-  - *Regularization*: L1/L2 weight penalties to constrain complexity.  
-  - *Dropout*: Randomly deactivate neurons during training to build robustness.  
-  - *Early Stopping*: Halt training when validation performance plateaus.  
-- **Vanishing/Exploding Gradients**: Gradients become too small or large in deep networks.  
-  - *Weight Initialization*: Methods like Xavier/He initialization.  
-  - *Gradient Clipping*: Cap gradient values to a fixed range.  
-- **Hyperparameter Tuning**: Learning rate, batch size, number of layers/neurons—often performed via grid search, random search, or Bayesian optimization.
-
-
-Typical use cases span computer vision (image classification, object detection), natural language processing (machine translation, sentiment analysis), and reinforcement learning (game playing, robotics). Hardware acceleration using GPUs and distributed training across multiple machines has become essential for scaling up deep learning workloads.
-""")
