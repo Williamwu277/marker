@@ -6,8 +6,8 @@ import os
 from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
-from twelvelabs_embedding import TwelveLabsEmbeddings
-from chunking import NoteClusterer
+from .twelvelabs_embedding import TwelveLabsEmbeddings
+from .chunking import NoteClusterer
 
 
 class FAISS_INDEX:

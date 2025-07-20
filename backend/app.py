@@ -1,11 +1,10 @@
-import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
-from backend.services.embedding.chunking import TextChunker
-from backend.services.embedding.faiss_longchain_indexing import FAISSIndexer
-from backend.services.embedding.file_processing import Processor
-from backend.services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
+from services.embedding.chunking import NoteClusterer
+from services.embedding.faiss_longchain_indexing import FAISS_INDEX as FAISSIndexer
+from services.embedding.file_processing import Processor
+from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -15,7 +14,7 @@ file_parser = Parser()
 ALLOWED_EXTENSIONS = {'pdf', 'png'}
 
 # Initialize text chunker and FAISS indexer
-text_chunker = TextChunker()
+text_chunker = NoteClusterer()
 faiss_index = FAISSIndexer()
 embedder = TwelveLabsEmbeddings()
 processor = Processor()
