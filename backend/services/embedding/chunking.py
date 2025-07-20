@@ -4,6 +4,9 @@ from transformers import GPT2TokenizerFast
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import AgglomerativeClustering
 
+MAX_TOKENS = 100
+MIN_TOKENS = 60
+
 class NoteClusterer:
     def __init__(self):
         self.tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
@@ -59,7 +62,7 @@ class NoteClusterer:
         clusters.append(current_text.strip())
         page_chunk["page_content"] = clusters
     
-    def merge_small_clusters(self, chunks, min_tokens=45) -> list:
+    def merge_small_clusters(self, chunks, min_tokens=MIN_TOKENS) -> list:
         """merges clusters that are smaller than min_tokens"""
         merged_chunks = []
         current_chunk = ""
@@ -82,7 +85,7 @@ class NoteClusterer:
 
         return merged_chunks
     
-    def split_large_chunk(self, chunk_tokens, max_tokens=65):
+    def split_large_chunk(self, chunk_tokens, max_tokens=MAX_TOKENS):
         """splits a singular chunk into smaller chunks until the max length of one chunk is at most 65 tokens"""
         split_chunks = []
 
@@ -101,7 +104,7 @@ class NoteClusterer:
 
         for chunk in merged_chunks:
             chunk_tokens = self.tokenizer.encode(chunk, add_special_tokens=False)
-            if len(chunk_tokens) > 65:
+            if len(chunk_tokens) > MAX_TOKENS:
                 splits = self.split_large_chunk(chunk_tokens)
                 processed_chunks.extend(splits)
             else:
