@@ -2,6 +2,9 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
+from functools import wraps
+from jose import jwt
+import requests
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -9,6 +12,11 @@ CORS(app)  # Enable CORS for all routes
 # Initialize the PDF parser
 file_parser = Parser()
 ALLOWED_EXTENSIONS = {'pdf', 'png'}
+
+# Auth0 Settings
+AUTH0_DOMAIN = os.environ.get("AUTH0_DOMAIN")
+API_AUDIENCE = os.environ.get("API_AUDIENCE")
+ALGORITHMS = os.environ.get("ALGORITHMS", "RS256").split(",")
 
 def get_file_extension(filename):
     if '.' not in filename:
@@ -120,7 +128,7 @@ def get_all_files():
             for file in files
         ]
 
-        print(...files)
+        print(*files)
 
         return jsonify({
             'success': True,
@@ -129,6 +137,56 @@ def get_all_files():
 
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+    
+
+# Auth0 Verification
+def verify_jwt(token):
+    jsonurl = requests.get(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    jwks = jsonurl.json()
+    unverified_header = jwt.get_unverified_header(token)
+
+    rsa_key = {}
+    for key in jwks['keys']:
+        if key['kid'] == unverified_header['kid']:
+            rsa_key = {
+                'kty': key['kty'],
+                'kid': key['kid'],
+                'use': key['use'],
+                'n': key['n'],
+                'e': key['e']
+            }
+            break
+
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience=API_AUDIENCE,
+                issuer=f'https://{AUTH0_DOMAIN}/'
+            )
+            return payload
+        except Exception:
+            return None
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization', "").split("Bearer ")[-1]
+        payload = verify_jwt(token)
+        if not payload:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(payload, *args, **kwargs)
+    return decorated
+
+@app.route('/dashboard', methods=['GET']) # TODO: CHANGE THIS TO MATCH WTIH FRONTEND
+@requires_auth
+def protected_route(payload):
+    return jsonify({
+        "message": "Access granted!",
+        "user": payload
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5099)

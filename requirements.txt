@@ -15,10 +15,3 @@ Werkzeug
 scikit-learn==1.3.2
 nltk
 transformers
-<<<<<<< Updated upstream
-pytesseract
-Pillow
-
-=======
-python-jose
->>>>>>> Stashed changes
