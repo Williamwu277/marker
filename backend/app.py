@@ -3,11 +3,8 @@ from flask_cors import CORS
 from utils.parser import Parser
 from services.embedding.chunking import NoteClusterer
 from services.embedding.faiss_longchain_indexing import FAISS_INDEX as FAISSIndexer
-from services.embedding.file_processing import Processor
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
-from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
-from services.embedding.faiss_longchain_indexing import FAISS_INDEX
-import tempfile
+
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -20,7 +17,6 @@ ALLOWED_EXTENSIONS = {'pdf', 'png'}
 text_chunker = NoteClusterer()
 faiss_index = FAISSIndexer()
 embedder = TwelveLabsEmbeddings()
-processor = Processor()
 
 def get_file_extension(filename):
     if '.' not in filename:
