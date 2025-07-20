@@ -6,7 +6,7 @@ from flask_cors import CORS
 from utils.parser import Parser
 from services.gemini_service import GeminiService
 from services.embedding.chunking import NoteClusterer
-from backend.services.embedding.faiss_langchain_indexing import FAISS_INDEX as FAISSIndexer
+from services.embedding.faiss_langchain_indexing import FAISS_INDEX as FAISSIndexer
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
 from services.embedding.video_summary import VideoSummarizer
 from services.embedding.video_summary import VideoSummarizer
@@ -22,7 +22,7 @@ gemini = GeminiService()
 gemini = GeminiService()
 
 # Initialize the PDF parser
-file_parser = Parser(gemini)
+file_parser = Parser(gemini.client)
 
 # Bounding box chunks filter name
 filter_name = 'bounding_block_name'
@@ -352,71 +352,6 @@ def generate_notes(file_id):
     except Exception as e:
         return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
 
-@app.route('/generate_practice_questions/<file_id>', methods=['POST'])
-def generate_practice_questions(file_id):
-    """
-    Generate practice questions from parsed file content using text summary
-    Args:
-        file_id: ID of the parsed file
-    Returns:
-        JSON response with status and file paths
-    """
-    try:
-        # Get file data from parser
-        file_data = file_parser.get_file(file_id)
-        if not file_data:
-            return jsonify({'error': 'File not found'}), 404
-
-        # Get text summary directly
-        text_summary = file_data['text_summary']
-        if not text_summary:
-            return jsonify({'error': 'No text content found in file'}), 400
-        
-        # Generate practice questions
-        gemini.generate_practice_questions(text_summary)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Practice questions generated successfully',
-            'worksheet_path': 'backend/output/worksheet.pdf',
-            'answer_key_path': 'backend/output/answer_key.pdf'
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error generating practice questions: {str(e)}'}), 500
-
-@app.route('/generate_notes/<file_id>', methods=['POST'])
-def generate_notes(file_id):
-    """
-    Generate study notes from parsed file content using text summary
-    Args:
-        file_id: ID of the parsed file
-    Returns:
-        JSON response with status and file path
-    """
-    try:
-        # Get file data from parser
-        file_data = file_parser.get_file(file_id)
-        if not file_data:
-            return jsonify({'error': 'File not found'}), 404
-
-        # Get text summary directly
-        text_summary = file_data['text_summary']
-        if not text_summary:
-            return jsonify({'error': 'No text content found in file'}), 400
-        
-        # Generate notes
-        gemini.generate_notes(text_summary)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Notes generated successfully',
-            'notes_path': 'backend/output/notes.pdf'
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
-
 @app.route("/search_embeddings", methods=['POST'])
 def search_embeddings():
     """Returns a json file that contains "results" which is linked to a list that contains dictionaries with file_ids and bound_box/times."""
@@ -444,7 +379,25 @@ def search_embeddings():
         return jsonify({"sucecss": True, "query": query, "results": data})
     except Exception as e:
         return jsonify({"eroor": e}), 500
+
+@app.route('/get_video_bytes', methods=['POST'])
+def get_video_bytes():
+    """
+    Get the video bytes for a given file ID
+    """
+    try:
+        data = request.get_json()
+        if not data or 'file_id' not in data:
+            return jsonify({'error': 'File ID is required in request body'}), 400
         
+        file_id = data['file_id']
+        file_data = file_parser.get_file(file_id)
+        return Response(file_data['video_bytes'], mimetype='video/mp4'), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5099)

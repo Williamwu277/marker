@@ -8,9 +8,9 @@ import sys
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, project_root)
 
-from backend.utils.gemini_client import GeminiClient
-from backend.services.notes_generation import generate_notes_from_xml
-from backend.services.worksheet_generation import generate_worksheet_from_xml
+from utils.gemini_client import GeminiClient
+from services.notes_generation import generate_notes_from_xml
+from services.worksheet_generation import generate_worksheet_from_xml
 
 
 class GeminiService:

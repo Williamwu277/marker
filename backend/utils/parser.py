@@ -11,7 +11,7 @@ from pdf2image import convert_from_bytes, convert_from_path
 from dotenv import load_dotenv
 from PIL import Image
 from .gemini_client import GeminiClient
-from backend.services.embedding.faiss_langchain_indexing import FAISS_INDEX
+from services.embedding.faiss_langchain_indexing import FAISS_INDEX
 from langchain_core.documents import Document
 
 load_dotenv(override=True)
