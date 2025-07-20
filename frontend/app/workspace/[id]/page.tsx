@@ -48,6 +48,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
     const [clickedBlock, setClickedBlock] = useState<number>(-1);
     const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null);
     const resolvedParams = use(params);
+    const [searchResults, setSearchResults] = useState<any>(null);
 
     // Fetch file data from backend
     useEffect(() => {
@@ -84,9 +85,38 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
         setSelectedProblem(problem);
     };
 
-    const handleBlockClick = (blockIndex: number) => {
-        setClickedBlock(blockIndex);
-    };
+    const handleBlockClick = async (blockIndex: number) => {
+    setClickedBlock(blockIndex);
+
+    const blockText = fileData?.data[currentPage].text_blocks[blockIndex].text;
+
+    if (!blockText) return;
+
+    try {
+        const response = await fetch('http://localhost:5099/search_embeddings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: blockText,
+                file_id: fileData?.file_id
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Search failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setSearchResults(data); // Store it for display
+
+    } catch (err) {
+        console.error("Error sending block text:", err);
+    }
+};
+
+   };
 
     // Calculate relative positions for the interactive elements
     const getBlockStyle = (boundingBox: [number, number][], imageDimensions: [number, number]) => {
