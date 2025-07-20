@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from twelvelabs_embedding import TwelveLabsEmbeddings
-from note_upload import NoteClusterer
+from chunking import NoteClusterer
 
 
 class FAISS_INDEX:
@@ -66,14 +66,14 @@ class FAISS_INDEX:
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
     def search(self, query:str, filter:dict={}):
-        results = self.vector_store.asimilarity_search_with_relevance_scores(
+        results = self.vector_store.similarity_search(
             query=query,
             k=self.k_results,
-            filter=filter,
+            filter=filter
         )
         
-        results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
-        return results_sorted[0][0]  
+        # results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
+        return results
 
     
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     test_index = FAISS_INDEX()
     chunks = text_chunker.process_pdf(file_path='backend/services/sample_pdf.pdf')
     test_index.add_text_chunks_to_index(chunks=chunks)
-    # print(test_index.search(query='what awards are mentioned'))
+    print(test_index.search(query='what awards are mentioned'))
 
 
 
