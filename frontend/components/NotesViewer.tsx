@@ -15,6 +15,7 @@ interface FileData {
     data: any[];
     text_summary?: string;
     file_usage?: string;
+    video_bytes?: string;
 }
 
 export default function NotesViewer({ data, isLoading }: NotesViewerProps) {

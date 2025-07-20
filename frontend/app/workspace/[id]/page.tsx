@@ -21,6 +21,7 @@ interface FileData {
     file_id: string;
     file_name: string;
     data: PageData[];
+    video_bytes?: string;
 }
 
 interface RelatedContent {

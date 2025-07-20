@@ -27,6 +27,7 @@ interface FileData {
     data: any[];
     text_summary?: string;
     file_usage?: string;
+    video_bytes?: string;
 }
 
 export default function Dashboard() {

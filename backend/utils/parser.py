@@ -15,8 +15,6 @@ import requests
 import time
 
 load_dotenv(override=True)
-api_key = os.environ.get("TWELVE_LABS_API")
-engine_id = os.environ.get("ENGINE_ID")
 
 class Parser:
 
@@ -39,7 +37,8 @@ class Parser:
                 "temp_path": "path_to_temp_file",  # Only for pdfs and videos
                 "text_summary": "full_text" or "video_summary", 
                 "file_usage": "notes" or "worksheet" or "video",
-                "pages": [
+                "video_bytes"(?): "video_bytes",
+                "pages"(?): [
                     {
                         "image": "base64_encoded_image",
                         "dimensions": (width, height),
@@ -108,11 +107,6 @@ class Parser:
         # Generate unique ID
         file_id = self.generate_random_id()
 
-        upload_url = "https://api.twelvelabs.io/v1.3/videos"
-        headers = {"x-api-key": api_key}
-        files = {"file": open(video_path, "rb")}
-        data = {"engine_id": engine_id}
-
         # Store metadata
         self.data[file_id] = {
             "file_name": file_name,
@@ -122,7 +116,8 @@ class Parser:
             "uploaded_at": datetime.now().isoformat(),
             "temp_path": temp_video_path,
             "pages": [],
-            "file_usage": file_usage
+            "file_usage": file_usage,
+            "video_bytes": video_bytes
         }
 
         return file_id
@@ -143,7 +138,8 @@ class Parser:
             "size": file_size,
             "uploaded_at": datetime.now().isoformat(),
             "pages": [],
-            "file_usage": file_usage
+            "file_usage": file_usage,
+            "video_bytes": None
         }
         
         # for each page

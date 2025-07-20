@@ -1,5 +1,6 @@
-from dotenv import load_dotenv
 import os
+import traceback
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
@@ -116,7 +117,8 @@ def get_file():
             'file_type': file_data['file_type'],
             'size': f'{round(file_data['size'] / 1024 / 1024, 2)} MB',
             'uploaded_at': file_data['uploaded_at'],
-            'data': file_data['pages']
+            'data': file_data['pages'],
+            'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
         
     except ValueError as e:
@@ -175,7 +177,8 @@ def upload_notes():
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
             'text_summary': full_text,
-            'file_usage': file_data['file_usage']
+            'file_usage': file_data['file_usage'],
+            'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
 
     except Exception as e:
@@ -234,10 +237,12 @@ def upload_video():
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
             'file_usage': file_data['file_usage'],
-            'video_summary': video_summary
+            'video_summary': video_summary,
+            'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
 
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @app.route('/get_all_files', methods=['GET'])
