@@ -2,6 +2,10 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
+from backend.services.embedding.chunking import TextChunker
+from backend.services.embedding.faiss_longchain_indexing import FAISSIndexer
+from backend.services.embedding.file_processing import Processor
+from backend.services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -9,6 +13,12 @@ CORS(app)  # Enable CORS for all routes
 # Initialize the PDF parser
 file_parser = Parser()
 ALLOWED_EXTENSIONS = {'pdf', 'png'}
+
+# Initialize text chunker and FAISS indexer
+text_chunker = TextChunker()
+faiss_index = FAISSIndexer()
+embedder = TwelveLabsEmbeddings()
+processor = Processor()
 
 def get_file_extension(filename):
     if '.' not in filename:
@@ -99,6 +109,101 @@ def get_file():
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
+@app.route('/upload_notes', methods=['POST'])
+def upload_notes():
+    """
+    Endpoint to upload a PDF and return extracted info as JSON.
+    Expects: multipart/form-data with 'file' and 'file_name'
+    Returns: JSON response with extracted info
+    """
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        file_name = request.form.get('file_name')
+
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        if not file_name:
+            return jsonify({'error': 'File name is required'}), 400
+
+        if get_file_extension(file.filename) != 'pdf':
+            return jsonify({'error': 'Only PDF files are allowed'}), 400
+
+        file_bytes = file.read()
+
+        # Use your Parser to extract the info you want
+        file_id = file_parser.upload_pdf(file_bytes, file_name)
+        file_path = file_parser.data[file_id]['temp_path']
+
+        # CHUNK
+        chunks = text_chunker.process_pdf(file_path=file_path)
+        faiss_index.add_text_chunks_to_index(chunks=chunks)
+        file_data = file_parser.get_file(file_id)
+
+        return jsonify({
+            'success': True,
+            'file_id': file_id,
+            'file_name': file_data['file_name'],
+            'file_type': file_data['file_type'],
+            'size': f'{file_data['size'] / 1024 / 1024} MB',
+            'uploaded_at': file_data['uploaded_at'],
+            'data': file_data['pages']
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/upload_video', methods=['POST'])
+def upload_video():
+    """
+    Endpoint to upload a .mp4 video and store metadata.
+    Expects: multipart/form-data with 'file' and 'file_name'
+    Returns: JSON response with success status and file info
+    """
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        file_name = request.form.get('file_name')
+
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        if not file_name:
+            return jsonify({'error': 'File name is required'}), 400
+
+        if get_file_extension(file.filename) != 'mp4':
+            return jsonify({'error': 'Only MP4 video files are allowed'}), 400
+
+        file_bytes = file.read()
+
+        # Store using parser
+        file_id = file_parser.upload_video(file_bytes, file_name)
+        file_data = file_parser.get_file(file_id)
+        file_path = file_data['temp_path']
+
+        # CHUNK
+        doc_name = faiss_index.get_video_name(file_path=file_path)
+        chunk_embeddings = embedder.embed_video(video=file_path)
+        faiss_index.add_video_chunks_to_index(chunk_embeddings, file_path)
+
+        return jsonify({
+            'success': True,
+            'file_id': file_id,
+            'file_name': file_data['file_name'],
+            'file_type': file_data['file_type'],
+            'size': f'{file_data['size'] / 1024 / 1024} MB',
+            'uploaded_at': file_data['uploaded_at'],
+            'data': file_data['pages']  # Usually empty for videos
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 @app.route('/get_all_files', methods=['GET'])
 def get_all_files():
     """
@@ -120,7 +225,7 @@ def get_all_files():
             for file in files
         ]
 
-        print(...files)
+        print(*files)
 
         return jsonify({
             'success': True,

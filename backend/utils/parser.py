@@ -3,6 +3,7 @@ import io
 import base64
 import random
 import string
+import tempfile
 from datetime import datetime
 from google.oauth2 import service_account
 from google.cloud import vision 
@@ -82,11 +83,37 @@ class Parser:
     Returns the generated ID
     '''
     def upload_pdf(self, pdf_bytes, pdf_name):
+        temp_pdf_path = self.save_temp_pdf(pdf_bytes)
+
         images = convert_from_bytes(pdf_bytes, dpi=300)
         if len(images) > 5:
             raise ValueError("PDF must have less than 5 pages")
         
-        return self.extract_text(images, pdf_name, len(pdf_bytes))
+        
+        file_id = self.extract_text(images, pdf_name, len(pdf_bytes))
+        self.data[file_id]["temp_path"] = temp_pdf_path
+
+        return file_id
+    
+    def upload_video(self, video_bytes, file_name):
+        # Save to temp file
+        temp_video_path = self.save_temp_video(video_bytes)
+
+        # Generate unique ID
+        file_id = self.generate_random_id()
+
+        # Store metadata
+        self.data[file_id] = {
+            "file_name": file_name,
+            "id": file_id,
+            "file_type": "video",
+            "size": len(video_bytes),
+            "uploaded_at": datetime.now().isoformat(),
+            "temp_path": temp_video_path,
+            "pages": []  # Keep for consistency with other file types
+        }
+
+        return file_id
     
     '''
     Given a list of images, extract the text from the images and store it
@@ -167,3 +194,19 @@ class Parser:
             raise ValueError("PDF must have less than 5 pages")
         
         return self.extract_text(images, file_name)
+
+    def save_temp_pdf(self, pdf_bytes):
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        temp_file.write(pdf_bytes)
+        temp_file.flush()
+        temp_path = temp_file.name
+        temp_file.close()
+        return temp_path
+    
+    def save_temp_video(self, video_bytes):
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+        temp_file.write(video_bytes)
+        temp_file.flush()
+        temp_path = temp_file.name
+        temp_file.close()
+        return temp_path
