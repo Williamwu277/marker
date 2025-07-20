@@ -28,7 +28,7 @@ class GeminiService:
         xml = self.client.generate_notes(topic, context)
         print(xml)
         output = generate_notes_from_xml(xml, output_filename="notes.pdf")
-        print("Wrote PDF to", output)
+        print("Wrote notes to", output)
 
     def generate_practice_questions(self, topic: str, context: str):
         xml = self.client.generate_practice_questions(topic, context)
