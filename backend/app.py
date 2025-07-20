@@ -45,10 +45,14 @@ def upload_file():
         
         file = request.files['file']
         file_name = request.form.get('file_name')
+        file_usage = request.form.get('file_usage')
         
         # Validate inputs
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+
+        if not file_usage or file_usage != "worksheet":
+            return jsonify({'error': 'File usage needs to be "worksheet"'}), 400
         
         if not file_name:
             return jsonify({'error': 'File name is required'}), 400
@@ -63,9 +67,9 @@ def upload_file():
         file_id = None
         file_extension = get_file_extension(file_name)
         if file_extension == 'pdf':
-            file_id = file_parser.upload_pdf(file_bytes, file_name)
+            file_id = file_parser.upload_pdf(file_bytes, file_name, file_usage)
         elif file_extension == 'png':
-            file_id = file_parser.upload_png(file_bytes, file_name)
+            file_id = file_parser.upload_png(file_bytes, file_name, file_usage)
         
         return jsonify({
             'success': True,
@@ -125,9 +129,13 @@ def upload_notes():
         
         file = request.files['file']
         file_name = request.form.get('file_name')
+        file_usage = request.form.get('file_usage')
 
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+
+        if not file_usage or file_usage != "notes":
+            return jsonify({'error': 'File usage needs to be "notes"'}), 400
 
         if not file_name:
             return jsonify({'error': 'File name is required'}), 400
@@ -138,7 +146,7 @@ def upload_notes():
         file_bytes = file.read()
 
         # Use your Parser to extract the info you want
-        file_id = file_parser.upload_pdf(file_bytes, file_name)
+        file_id = file_parser.upload_pdf(file_bytes, file_name, file_usage)
         file_path = file_parser.data[file_id]['temp_path']
 
         # CHUNK
@@ -158,7 +166,8 @@ def upload_notes():
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
-            'text_summary': full_text
+            'text_summary': full_text,
+            'file_usage': file_data['file_usage']
         }), 200
 
     except Exception as e:
@@ -177,9 +186,13 @@ def upload_video():
 
         file = request.files['file']
         file_name = request.form.get('file_name')
+        file_usage = request.form.get('file_usage')
 
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+        
+        if not file_usage or file_usage != "video":
+            return jsonify({'error': 'File usage needs to be "video"'}), 400
 
         if not file_name:
             return jsonify({'error': 'File name is required'}), 400
@@ -190,7 +203,7 @@ def upload_video():
         file_bytes = file.read()
 
         # Store using parser
-        file_id = file_parser.upload_video(file_bytes, file_name)
+        file_id = file_parser.upload_video(file_bytes, file_name, file_usage)
         file_data = file_parser.get_file(file_id)
         file_path = file_data['temp_path']
 
@@ -206,7 +219,8 @@ def upload_video():
             'file_type': file_data['file_type'],
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
-            'data': file_data['pages']  # Usually empty for videos
+            'data': file_data['pages'],
+            'file_usage': file_data['file_usage']
         }), 200
 
     except Exception as e:
@@ -228,7 +242,8 @@ def get_all_files():
                 'type': 'video' if file['file_type'] == 'video' else 'pdf' if file['file_type'] == 'pdf' else 'png',
                 'size': f'{round(file['size'] / 1024 / 1024, 2)} MB',
                 'uploadedAt': file['uploaded_at'],
-                'thumbnail': None
+                'thumbnail': None,
+                'file_usage': file['file_usage']
             }
             for file in files
         ]
