@@ -13,6 +13,7 @@ from services.embedding.video_summary import VideoSummarizer
 # Load environment variables
 load_dotenv(override=True)
 
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 gemini = GeminiService()
@@ -155,7 +156,6 @@ def upload_notes():
 
         file_bytes = file.read()
 
-        # Use your Parser to extract the info you want
         file_id = file_parser.upload_pdf(file_bytes, file_name, file_usage)
         file_path = file_parser.data[file_id]['temp_path']
 
@@ -164,9 +164,13 @@ def upload_notes():
         
         full_text = ""
         for chunk in chunks:
-            full_text += chunk['page_text'] + " "
-        faiss_index.add_text_chunks_to_index(chunks=chunks, file_path=file_path)
+            full_text += chunk['page_content'] + " "
+        #faiss_index.add_text_chunks_to_index(chunks=chunks, file_path=file_path)
+
+        # Use your Parser to extract the info you want
+        
         file_data = file_parser.get_file(file_id)
+        file_parser.update_text_summary(file_id, full_text)
 
         return jsonify({
             'success': True,
@@ -181,6 +185,7 @@ def upload_notes():
             'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
 
+    
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
@@ -328,6 +333,7 @@ def generate_notes(file_id):
 
         # Get text summary directly
         text_summary = file_data['text_summary']
+        print(file_data['text_summary'])
         if not text_summary:
             return jsonify({'error': 'No text content found in file'}), 400
         
@@ -341,6 +347,7 @@ def generate_notes(file_id):
         }), 200
         
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
 
 if __name__ == '__main__':

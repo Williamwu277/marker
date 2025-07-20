@@ -18,7 +18,7 @@ load_dotenv(override=True)
 
 class Parser:
 
-    def __init__(self, gClient):
+    def __init__(self, gClient : GeminiClient):
 
         credentials = service_account.Credentials.from_service_account_file(
             os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
@@ -97,7 +97,6 @@ class Parser:
         
         file_id = self.extract_text(images, pdf_name, len(pdf_bytes), file_usage)
         self.data[file_id]["temp_path"] = temp_pdf_path
-
         return file_id
     
     def upload_video(self, video_bytes, file_name, file_usage):
@@ -122,6 +121,10 @@ class Parser:
 
         return file_id
     
+    def update_text_summary(self, id, full_text):
+        self.data[id]["text_summary"] = full_text
+        print("DID THIS DO ANYTHING ", self.data[id]["text_summary"], id)
+    
     '''
     Given a list of images, extract the text from the images and store it
     Returns the generated ID
@@ -139,7 +142,8 @@ class Parser:
             "uploaded_at": datetime.now().isoformat(),
             "pages": [],
             "file_usage": file_usage,
-            "video_bytes": None
+            "video_bytes": None,
+            "text_summary": None
         }
         
         # for each page

@@ -37,6 +37,7 @@ export default function Dashboard() {
     const [modalContent, setModalContent] = useState<FileData | null>(null);
     const [modalType, setModalType] = useState<'notes' | 'video' | null>(null);
     const [isLoadingModal, setIsLoadingModal] = useState(false);
+    const [isGeneratingNotes, setIsGeneratingNotes] = useState<string | null>(null); // Track which file is generating notes
     /*
         {
             id: '1',
@@ -167,6 +168,36 @@ export default function Dashboard() {
         }
     };
 
+    const handleGenerateNotes = async (item: ContentItem) => {
+        setIsGeneratingNotes(item.id);
+
+        try {
+            const response = await fetch(`http://localhost:5099/generate_notes/${item.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate notes');
+            }
+
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Notes generated successfully for "${item.name}"! Check the backend/output folder for notes.pdf`);
+            } else {
+                throw new Error(result.error || 'Failed to generate notes');
+            }
+        } catch (error) {
+            alert(`Failed to generate notes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsGeneratingNotes(null);
+        }
+    };
+
     const closeModal = () => {
         setIsModalOpen(false);
         setModalContent(null);
@@ -211,10 +242,22 @@ export default function Dashboard() {
                                 </Link>
                             ) : (
                                 <button 
-                                    className="hover:cursor-pointer bg-notebook text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors flex-1 text-center"
-
+                                    className={`px-4 py-2 rounded-lg text-sm transition-colors flex-1 text-center ${
+                                        isGeneratingNotes === item.id 
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                            : 'hover:cursor-pointer bg-notebook text-secondary hover:bg-secondary/20'
+                                    }`}
+                                    onClick={() => handleGenerateNotes(item)}
+                                    disabled={isGeneratingNotes === item.id}
                                 >
-                                    Create Notes
+                                    {isGeneratingNotes === item.id ? (
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"></div>
+                                            <span>Generating...</span>
+                                        </div>
+                                    ) : (
+                                        'Create Notes'
+                                    )}
                                 </button>
                             )}
                             {(item.file_usage === 'notes' || item.file_usage === 'video') && (

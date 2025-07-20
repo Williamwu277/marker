@@ -68,8 +68,12 @@ class FAISS_INDEX:
     def add_text_chunks_to_index(self, chunks:list[dict[str]], file_path: str):
         c_name = self.get_video_name(file_path=file_path)
         ids = [f'{c_name}_chunk_{i}' for i in range(len(chunks))]
+        print("1")
         document_chunks = [Document(**chunk) for chunk in chunks]
+        print("2")
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
+        print("3")
+        print(f'Sucessfully added {len(chunks)} text chunks to index')
     
     def search(self, query:str, doc_name:str, most_similar:bool=False):
         results = self.vector_store.similarity_search(
