@@ -48,19 +48,19 @@ class GeminiClient:
             print(f"OpenAI validation failed: {e}")
             return xml_content  # Return original if validation fails
 
-    def generate_notes(self, topic: str, context: str) -> str:
+    def generate_notes(self, context: str) -> str:
         # Generate initial notes with Gemini
         prompt_template = self.prompts['gemini']['notes']['prompt']
-        contents = prompt_template.format(topic=topic, context=context)
+        contents = prompt_template.format(context=context)
         initial_response = self.generate_content(contents)
         
         # Validate and clean XML with OpenAI
         validated_xml = self.validate_xml(initial_response, "notes")
         return validated_xml
     
-    def generate_practice_questions(self, topic: str, context: str) -> str:
+    def generate_practice_questions(self, context: str) -> str:
         prompt_template = self.prompts['gemini']['practice_questions']['prompt']
-        contents = prompt_template.format(topic=topic, context=context)
+        contents = prompt_template.format(context=context)
         initial_response = self.generate_content(contents)
         # Validate and clean XML with OpenAI
 <<<<<<< Updated upstream
