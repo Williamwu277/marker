@@ -225,3 +225,4 @@ class Parser:
         temp_path = temp_file.name
         temp_file.close()
         return temp_path
+    

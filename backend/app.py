@@ -4,8 +4,8 @@ from utils.parser import Parser
 from services.embedding.chunking import NoteClusterer
 from services.embedding.faiss_longchain_indexing import FAISS_INDEX as FAISSIndexer
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
-
-
+from services.embedding.video_summary import VideoSummarizer
+import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -18,6 +18,7 @@ ALLOWED_EXTENSIONS = {'pdf', 'png'}
 text_chunker = NoteClusterer()
 faiss_index = FAISSIndexer()
 embedder = TwelveLabsEmbeddings()
+video_summarizer = VideoSummarizer(api_key=os.environ.get("TWELVE_LABS_API"))
 
 def get_file_extension(filename):
     if '.' not in filename:
@@ -199,6 +200,11 @@ def upload_video():
         chunk_embeddings = embedder.embed_video(video=file_path)
         faiss_index.add_video_chunks_to_index(chunk_embeddings, file_path)
 
+        # Summarize video
+        video_summary_id = video_summarizer.create_task(file_path)
+        video_summary_id.wait_until_ready()
+        video_summary = video_summarizer.summarize_video(video_summary_id)
+
         return jsonify({
             'success': True,
             'file_id': file_id,
@@ -207,6 +213,7 @@ def upload_video():
             'size': f'{file_data['size'] / 1024 / 1024} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages']  # Usually empty for videos
+            'video_summary': video_summary
         }), 200
 
     except Exception as e:
