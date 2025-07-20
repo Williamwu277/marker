@@ -13,7 +13,6 @@ interface FileData {
     data: any[];
     text_summary?: string;
     file_usage?: string;
-    video_bytes?: string;
 }
 
 interface ContentViewerProps {
@@ -32,14 +31,12 @@ export default function ContentViewer({ modalType, modalContent, isLoading }: Co
         );
     }
 
-    const data = modalContent.data || [];
-
     if (modalType === 'notes') {
-        return <NotesViewer data={data} isLoading={isLoading} />;
+        return <NotesViewer data={modalContent.data || []} isLoading={isLoading} />;
     }
 
     if (modalType === 'video') {
-        return <VideoViewer data={data} isLoading={isLoading} />;
+        return <VideoViewer data={modalContent} isLoading={isLoading} />;
     }
 
     return (

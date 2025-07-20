@@ -1,7 +1,7 @@
 import os
 import traceback
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from utils.parser import Parser
 from services.gemini_service import GeminiService
@@ -118,12 +118,12 @@ def get_file():
             'size': f'{round(file_data["size"] / 1024 / 1024, 2)} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
-            'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
         
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @app.route('/upload_notes', methods=['POST'])
@@ -178,7 +178,6 @@ def upload_notes():
             'data': file_data['pages'],
             'text_summary': full_text,
             'file_usage': file_data['file_usage'],
-            'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
 
     except Exception as e:
@@ -238,7 +237,6 @@ def upload_video():
             'data': file_data['pages'],
             'file_usage': file_data['file_usage'],
             'video_summary': video_summary,
-            'video_bytes': file_data['video_bytes'] if 'video_bytes' in file_data else None
         }), 200
 
     except Exception as e:
@@ -342,6 +340,24 @@ def generate_notes(file_id):
         
     except Exception as e:
         return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
+
+@app.route('/get_video_bytes', methods=['POST'])
+def get_video_bytes():
+    """
+    Get the video bytes for a given file ID
+    """
+    try:
+        data = request.get_json()
+        if not data or 'file_id' not in data:
+            return jsonify({'error': 'File ID is required in request body'}), 400
+        
+        file_id = data['file_id']
+        file_data = file_parser.get_file(file_id)
+        return Response(file_data['video_bytes'], mimetype='video/mp4'), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5099)
