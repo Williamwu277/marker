@@ -14,7 +14,6 @@ from backend.services.notes_generation import generate_notes_from_xml
 from backend.services.worksheet_generation import generate_worksheet_from_xml
 
 
-
 class GeminiService:
     """
     Simple wrapper around GeminiClient for generating notes,
@@ -22,24 +21,63 @@ class GeminiService:
     """
 
     def __init__(self):
-        self.client = GeminiClient() 
+        self.client = GeminiClient()
 
     def generate_notes(self, topic: str, context: str):
         xml = self.client.generate_notes(topic, context)
-        print(xml)
-        output = generate_notes_from_xml(xml, output_filename="notes.pdf")
-        print("Wrote notes to", output)
+        
+        # Generate notes with validation retry
+        generation_success = False
+        generation_attempts = 0
+        max_attempts = 3
+        
+        while not generation_success and generation_attempts < max_attempts:
+            try:
+                output = generate_notes_from_xml(xml, output_filename="notes.pdf")
+                generation_success = True
+                print("Wrote notes to", output)
+            except Exception as e:
+                print(f"Error generating notes: {e}")
+                xml = self.client.validate_xml(xml, "notes")
+                generation_attempts += 1
+                if generation_attempts == max_attempts:
+                    raise Exception("Failed to generate notes after maximum attempts")
 
     def generate_practice_questions(self, topic: str, context: str):
         xml = self.client.generate_practice_questions(topic, context)
         
         # Generate worksheet without answers
-        worksheet = generate_worksheet_from_xml(xml, "worksheet.pdf", include_answers=False)
-        print("Wrote worksheet to", worksheet)
+        generation_success = False
+        generation_attempts = 0
+        max_attempts = 3
         
-        # Generate answer key
-        answer_key = generate_worksheet_from_xml(xml, "answer_key.pdf", include_answers=True)
-        print("Wrote answer key to", answer_key)
+        while not generation_success and generation_attempts < max_attempts:
+            try:
+                worksheet = generate_worksheet_from_xml(xml, "worksheet.pdf", include_answers=False)
+                generation_success = True
+                print("Wrote worksheet to", worksheet)
+            except Exception as e:
+                print(f"Error generating worksheet: {e}")
+                xml = self.client.validate_xml(xml, "questions")
+                generation_attempts += 1
+                if generation_attempts == max_attempts:
+                    raise Exception("Failed to generate worksheet after maximum attempts")
+        
+        # Generate answer key with validation retry
+        generation_success = False
+        generation_attempts = 0
+        
+        while not generation_success and generation_attempts < max_attempts:
+            try:
+                answer_key = generate_worksheet_from_xml(xml, "answer_key.pdf", include_answers=True)
+                generation_success = True
+                print("Wrote answer key to", answer_key)
+            except Exception as e:
+                print(f"Error generating answer key: {e}")
+                xml = self.client.validate_xml(xml, "questions")
+                generation_attempts += 1
+                if generation_attempts == max_attempts:
+                    raise Exception("Failed to generate answer key after maximum attempts")
 
 
 load_dotenv()
