@@ -1,10 +1,8 @@
-from http import client
 from twelvelabs.models.task import Task
 from twelvelabs import TwelveLabs
-import random
-import string
-import os 
-import time
+from os import environ
+
+index_id = environ.get("INDEX_ID")
 
 class VideoSummarizer:
     def __init__(self, api_key: str):
@@ -12,7 +10,7 @@ class VideoSummarizer:
 
     def create_task(self, video_path: str) -> str:
         task = self.client.task.create(
-            index_id="687c70a061fa6d2e4d15449a",
+            index_id=index_id,
             file=video_path
         )
         task.wait_for_done(sleep_interval=5, callback=self.on_task_update)
