@@ -63,11 +63,7 @@ class GeminiClient:
         contents = prompt_template.format(context=context)
         initial_response = self.generate_content(contents)
         # Validate and clean XML with OpenAI
-<<<<<<< Updated upstream
         validated_xml = self.validate_xml(initial_response, "questions") 
-        return validated_xml
-=======
-        validated_xml = self.validate_xml(initial_response) 
         return validated_xml
     
     def filterQuestions(self, blocks: list[dict]) -> list[dict]:
@@ -100,4 +96,3 @@ class GeminiClient:
         print(*filtered_blocks)
         return filtered_blocks
         
->>>>>>> Stashed changes
