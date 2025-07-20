@@ -1,23 +1,31 @@
+from dotenv import load_dotenv
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
+from services.gemini_service import GeminiService
 from services.embedding.chunking import NoteClusterer
 from services.embedding.faiss_longchain_indexing import FAISS_INDEX as FAISSIndexer
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
+from services.embedding.video_summary import VideoSummarizer
 
-
+# Load environment variables
+load_dotenv(override=True)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+gemini = GeminiService()
 
 # Initialize the PDF parser
-file_parser = Parser()
+file_parser = Parser(gemini)
+
 ALLOWED_EXTENSIONS = {'pdf', 'png'}
 
 # Initialize text chunker and FAISS indexer
 text_chunker = NoteClusterer()
 faiss_index = FAISSIndexer()
 embedder = TwelveLabsEmbeddings()
+video_summarizer = VideoSummarizer(api_key=os.environ.get("TWELVE_LABS_API"))
 
 def get_file_extension(filename):
     if '.' not in filename:
@@ -212,6 +220,11 @@ def upload_video():
         chunk_embeddings = embedder.embed_video(video=file_path)
         faiss_index.add_video_chunks_to_index(chunk_embeddings, file_path)
 
+        # Summarize video
+        video_summary_id = video_summarizer.create_task(file_path)
+        video_summary_id.wait_until_ready()
+        video_summary = video_summarizer.summarize_video(video_summary_id)
+
         return jsonify({
             'success': True,
             'file_id': file_id,
@@ -221,6 +234,7 @@ def upload_video():
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages'],
             'file_usage': file_data['file_usage']
+            'video_summary': video_summary
         }), 200
 
     except Exception as e:
@@ -258,6 +272,71 @@ def get_all_files():
 
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/generate_practice_questions/<file_id>', methods=['POST'])
+def generate_practice_questions(file_id):
+    """
+    Generate practice questions from parsed file content using text summary
+    Args:
+        file_id: ID of the parsed file
+    Returns:
+        JSON response with status and file paths
+    """
+    try:
+        # Get file data from parser
+        file_data = file_parser.get_file(file_id)
+        if not file_data:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Get text summary directly
+        text_summary = file_data['text_summary']
+        if not text_summary:
+            return jsonify({'error': 'No text content found in file'}), 400
+        
+        # Generate practice questions
+        gemini.generate_practice_questions(text_summary)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Practice questions generated successfully',
+            'worksheet_path': 'backend/output/worksheet.pdf',
+            'answer_key_path': 'backend/output/answer_key.pdf'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating practice questions: {str(e)}'}), 500
+
+@app.route('/generate_notes/<file_id>', methods=['POST'])
+def generate_notes(file_id):
+    """
+    Generate study notes from parsed file content using text summary
+    Args:
+        file_id: ID of the parsed file
+    Returns:
+        JSON response with status and file path
+    """
+    try:
+        # Get file data from parser
+        file_data = file_parser.get_file(file_id)
+        if not file_data:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Get text summary directly
+        text_summary = file_data['text_summary']
+        if not text_summary:
+            return jsonify({'error': 'No text content found in file'}), 400
+        
+        # Generate notes
+        gemini.generate_notes(text_summary)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notes generated successfully',
+            'notes_path': 'backend/output/notes.pdf'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5099)

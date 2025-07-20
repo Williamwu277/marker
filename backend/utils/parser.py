@@ -20,13 +20,12 @@ engine_id = os.environ.get("ENGINE_ID")
 
 class Parser:
 
-    def __init__(self):
+    def __init__(self, gClient):
 
         credentials = service_account.Credentials.from_service_account_file(
             os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         )
         self.client = vision.ImageAnnotatorClient(credentials=credentials)
-        self.gClient = GeminiClient()
         
         '''
         self.data = {
@@ -228,3 +227,4 @@ class Parser:
         temp_path = temp_file.name
         temp_file.close()
         return temp_path
+    

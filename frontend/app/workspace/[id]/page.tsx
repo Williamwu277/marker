@@ -238,7 +238,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
                 <div className="w-100 bg-white border-l border-primary/20 overflow-auto">
                     <div className="p-6">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
-                            Links
+                            Memory Museum
                         </h3>
 
                         <div className="space-y-4">

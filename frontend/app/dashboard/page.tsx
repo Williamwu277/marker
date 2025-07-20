@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import Modal from '../../components/Modal';
+import ContentViewer from '../../components/ContentViewer';
 
 type ContentType = 'videos' | 'worksheets' | 'notes' | 'overview';
 
@@ -13,13 +14,28 @@ interface ContentItem {
     type: 'video' | 'pdf' | 'png';
     size: string;
     uploadedAt: string;
-    thumbnail?: string;
+    file_usage: 'video' | 'notes' | 'worksheet';
+}
+
+interface FileData {
+    success: boolean;
+    file_id: string;
+    file_name: string;
+    file_type: string;
+    size: string;
+    uploaded_at: string;
+    data: any[];
+    text_summary?: string;
+    file_usage?: string;
 }
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<ContentType>('overview');
     const [isUploading, setIsUploading] = useState(false);
-    const pathname = usePathname();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState<FileData | null>(null);
+    const [modalType, setModalType] = useState<'notes' | 'video' | null>(null);
+    const [isLoadingModal, setIsLoadingModal] = useState(false);
     /*
         {
             id: '1',
@@ -57,58 +73,103 @@ export default function Dashboard() {
         fetchFileData();
     }, []);
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'video' | 'file') => {
-    const files = event.target.files;
-    if (!files) return;
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'video' | 'worksheet' | 'notes') => {
+        const files = event.target.files;
+        if (!files) return;
 
-    setIsUploading(true);
+        setIsUploading(true);
 
-    try {
-        const file = files[0];
+        try {
+            const file = files[0];
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('file_name', file.name);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('file_name', file.name);
+            formData.append('file_usage', uploadType);
 
-        const uploadUrl = uploadType === 'video' ? 'http://127.0.0.1:5099/upload_video' : 'http://127.0.0.1:5099/upload_file';
+            let uploadUrl;
 
-        const uploadResponse = await fetch(uploadUrl, {
-            method: 'POST',
-            body: formData,
-        });
+            if(uploadType === 'video'){
+                uploadUrl = 'http://127.0.0.1:5099/upload_video';
+            }else if(uploadType === 'worksheet'){
+                uploadUrl = 'http://127.0.0.1:5099/upload_file';
+            }else{
+                uploadUrl = 'http://127.0.0.1:5099/upload_notes';
+            }
 
-        if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            throw new Error(errorData.error || 'Upload failed');
+            const uploadResponse = await fetch(uploadUrl, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json();
+                throw new Error(errorData.error || 'Upload failed');
+            }
+
+            const uploadResult = await uploadResponse.json();
+            console.log('Upload successful:', uploadResult);
+
+                // Add the file to the content list using the returned ID
+                const newFile: ContentItem = {
+                    id: uploadResult.file_id, // Use the returned file ID
+                    name: file.name,
+                    type: file.type.includes('video') ? 'video' : file.type.includes('pdf') ? 'pdf' : 'png',
+                    size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                    uploadedAt: new Date().toISOString().split('T')[0],
+                    file_usage: uploadType
+                };
+
+            setContent(prev => [newFile, ...prev]);
+        } catch (error) {
+            alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsUploading(false);
         }
-
-        const uploadResult = await uploadResponse.json();
-        console.log('Upload successful:', uploadResult);
-
-            // Add the file to the content list using the returned ID
-            const newFile: ContentItem = {
-                id: uploadResult.file_id, // Use the returned file ID
-                name: file.name,
-                type: file.type.includes('video') ? 'video' : file.type.includes('pdf') ? 'pdf' : 'png',
-                size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-                uploadedAt: new Date().toISOString().split('T')[0],
-                thumbnail: file.type.includes('video') ? '📹' : '📄'
-            };
-
-        setContent(prev => [newFile, ...prev]);
-    } catch (error) {
-        alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-        setIsUploading(false);
-    }
-};
+    };
 
     const getContentByType = (type: ContentType) => {
         if (type === 'overview') return content;
-        if (type === 'videos') return content.filter(item => item.type === 'video');
-        if (type === 'worksheets') return content.filter(item => item.type === 'pdf' || item.type === 'png');
-        if (type === 'notes') return content.filter(item => item.type === 'pdf' || item.type === 'png');
+        if (type === 'videos') return content.filter(item => item.file_usage === 'video');
+        if (type === 'worksheets') return content.filter(item => item.file_usage === 'worksheet');
+        if (type === 'notes') return content.filter(item => item.type === 'pdf' || item.file_usage === 'notes');
         return content;
+    };
+
+    const handleViewFile = async (item: ContentItem) => {
+        setIsLoadingModal(true);
+        setIsModalOpen(true);
+        setModalType(item.file_usage === 'video' ? 'video' : 'notes');
+
+        try {
+            const response = await fetch('http://localhost:5099/get_file', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    file_id: item.id
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const fileData: FileData = await response.json();
+            setModalContent(fileData);
+        } catch (error) {
+            alert(`Failed to load file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setIsModalOpen(false);
+        } finally {
+            setIsLoadingModal(false);
+        }
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setModalContent(null);
+        setModalType(null);
     };
 
     const renderContentGrid = () => {
@@ -127,9 +188,9 @@ export default function Dashboard() {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredContent.map((item) => (
-                    <div key={item.id} className="bg-white rounded-xl p-6 shadow-lg border border-primary/10 hover:shadow-xl transition-shadow">
+                    <div key={item.id} className="bg-white rounded-xl p-6 shadow-lg border border-primary/10 hover:shadow-xl transition-shadow flex flex-col h-full">
                         <div className="flex items-start justify-between mb-4">
-                            <div className="text-3xl">{item.thumbnail}</div>
+                            <div className="text-3xl">{item.file_usage === 'video' ? '📹' : item.file_usage === 'notes' ? '📄' : '📝'}</div>
                             <div className="text-xs text-foreground/60 bg-notebook px-2 py-1 rounded">
                                 {item.type.toUpperCase()}
                             </div>
@@ -139,18 +200,30 @@ export default function Dashboard() {
                             <p>Size: {item.size}</p>
                             <p>Uploaded: {item.uploadedAt}</p>
                         </div>
-                        <div className="mt-4 flex gap-2">
-                            {(item.type === 'pdf' || item.type === 'png') && (
+                        <div className="mt-auto pt-4 flex gap-2">
+                            {item.file_usage === 'worksheet' ? (
                                 <Link
                                     href={`/workspace/${item.id}`}
                                     className="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-secondary transition-colors flex-1 text-center"
                                 >
                                     Open Workspace
                                 </Link>
+                            ) : (
+                                <button 
+                                    className="hover:cursor-pointer bg-notebook text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors flex-1 text-center"
+
+                                >
+                                    Create Notes
+                                </button>
                             )}
-                            <button className="bg-secondary/10 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors">
-                                View
-                            </button>
+                            {(item.file_usage === 'notes' || item.file_usage === 'video') && (
+                                <button 
+                                    onClick={() => handleViewFile(item)}
+                                    className="hover:cursor-pointer bg-secondary/10 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors"
+                                >
+                                    View
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -176,8 +249,8 @@ export default function Dashboard() {
                             {[
                                 { id: 'overview', label: 'Overview', icon: '📊' },
                                 { id: 'videos', label: 'Videos', icon: '📹' },
-                                { id: 'worksheets', label: 'Worksheets', icon: '📄' },
-                                { id: 'notes', label: 'Notes', icon: '📝' }
+                                { id: 'worksheets', label: 'Worksheets', icon: '📝' },
+                                { id: 'notes', label: 'Notes', icon: '📄' }
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -214,7 +287,7 @@ export default function Dashboard() {
                                         type="file"
                                         accept=".pdf, .png"
                                         multiple
-                                        onChange={(e) => handleFileUpload(e, 'file')}
+                                        onChange={(e) => handleFileUpload(e, 'notes')}
                                         className="hidden"
                                     />
                                     <div className="bg-secondary/10 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors cursor-pointer text-center">
@@ -226,11 +299,11 @@ export default function Dashboard() {
                                         type="file"
                                         accept=".pdf, .png"
                                         multiple
-                                        onChange={handleFileUpload}
+                                        onChange={(e) => handleFileUpload(e, 'worksheet')}
                                         className="hidden"
                                     />
                                     <div className="bg-notebook/50 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors cursor-pointer text-center">
-                                    🏞️ Upload Worksheets
+                                    📝 Upload Worksheets
                                     </div>
                                 </label>
                             </div>
@@ -280,6 +353,19 @@ export default function Dashboard() {
                     </div>
                 </main>
             </div>
+
+            {/* Modal for viewing files */}
+            <Modal 
+                isOpen={isModalOpen} 
+                onClose={closeModal}
+                title={modalContent?.file_name || 'Loading...'}
+            >
+                <ContentViewer 
+                    modalType={modalType}
+                    modalContent={modalContent}
+                    isLoading={isLoadingModal}
+                />
+            </Modal>
         </div>
     );
 } 
