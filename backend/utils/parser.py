@@ -11,6 +11,8 @@ from pdf2image import convert_from_bytes, convert_from_path
 from dotenv import load_dotenv
 from PIL import Image
 from .gemini_client import GeminiClient
+from backend.services.embedding.faiss_langchain_indexing import FAISS_INDEX
+from langchain_core.documents import Document
 
 load_dotenv(override=True)
 
@@ -49,6 +51,7 @@ class Parser:
         }
         '''
         self.data = {}
+        self.indexer = FAISS_INDEX()
     
     def generate_random_id(self):
         id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
@@ -215,3 +218,41 @@ class Parser:
         temp_path = temp_file.name
         temp_file.close()
         return temp_path
+    
+    def find_bounding_box(self, filtered_name, similar_result: Document):
+        query = similar_result['page_content']
+        return self.indexer.search(query=query, doc_name=filtered_name, most_similar=True)['metadata']['bounding_box']
+
+    def create_blocked_embeddings(self, file_blocks:list[dict], filtered_name):
+        """
+        file name should be a filtered name to sift through the documents only with a bounding box
+        """
+        try: 
+            chunks = []
+            for block in file_blocks:
+                text = block.get('text_blocks')['text']
+                bounding_box = block.get('text_blocks')['bounding_box']
+                file_name = block.get('file_name')
+
+                chunk = {
+                    "page_content": text,
+                    "metadata": {
+                        "filtered_name": filtered_name,
+                        "bounding_box": bounding_box
+                    }
+                }
+
+                chunks.append(chunk)
+            
+            self.indexer.add_text_chunks_to_index(chunks=chunks, file_path=file_name)
+        except Exception as e:
+            return e
+
+
+# use case for embeddings 
+# 1. create the embeddings for the blocked chunks 
+# 2. find the bounidng box -> creates a semantic search between the texts, returns the bounding box 
+
+
+
+
