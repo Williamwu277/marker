@@ -26,6 +26,7 @@ class Parser:
             os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         )
         self.client = vision.ImageAnnotatorClient(credentials=credentials)
+        self.gClient = gClient
         
         '''
         self.data = {
