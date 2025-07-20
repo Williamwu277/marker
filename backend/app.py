@@ -235,10 +235,6 @@ def upload_video():
         video_summary_id.wait_until_ready()
         video_summary = video_summarizer.summarize_video(video_summary_id)
 
-        # Summarize video
-        video_summary_id = video_summarizer.create_task(file_path)
-        video_summary_id.wait_until_ready()
-        video_summary = video_summarizer.summarize_video(video_summary_id)
 
         return jsonify({
             'success': True,
@@ -417,6 +413,35 @@ def generate_notes(file_id):
         
     except Exception as e:
         return jsonify({'error': f'Error generating notes: {str(e)}'}), 500
+
+@app.route("/search_embeddings", methods=['POST'])
+def search_embeddings():
+    """Returns a json file that contains "results" which is linked to a list that contains dictionaries with file_ids and bound_box/times."""
+    try:
+        data = request.get_json()
+        query = data['query']
+        file_id = data['file_id']
+        file_data = file_parser.get_file(file_id)
+        file_name = file_data['file_name']
+
+        documents = faiss_index.search(query=query, file_name=file_name)
+        data = [] 
+        for document in documents:
+            for key in file_parser.data.keys():
+                if file_parser.data[key]["file_name"] == document.metadata["document_name"]:
+                    document_id = key
+                    break
+                
+            if document.metadata['type'] != 'video':
+                document.metadata['bound_box'] = file_parser.find_bounding_box(filtered_name=filter_name, similar_result=document)
+                data.append({"file_id": document_id, "bound_box": document.metadata["bound_box"]})
+            else:
+                data.append({"file_id": document_id, "start_time": document.metadata["start_time"], "end_time": document.metadata["end_time"]})
+
+        return jsonify({"sucecss": True, "query": query, "results": data})
+    except Exception as e:
+        return jsonify({"eroor": e}), 500
+        
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5099)

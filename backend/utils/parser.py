@@ -15,14 +15,8 @@ from backend.services.embedding.faiss_langchain_indexing import FAISS_INDEX
 from langchain_core.documents import Document
 
 load_dotenv(override=True)
-api_key = os.environ.get("TWELVE_LABS_API")
-engine_id = os.environ.get("ENGINE_ID")
-api_key = os.environ.get("TWELVE_LABS_API")
-engine_id = os.environ.get("ENGINE_ID")
 
 class Parser:
-
-    def __init__(self, gClient):
     def __init__(self, gClient):
 
         credentials = service_account.Credentials.from_service_account_file(
@@ -109,16 +103,6 @@ class Parser:
 
         # Generate unique ID
         file_id = self.generate_random_id()
-
-        upload_url = "https://api.twelvelabs.io/v1.3/videos"
-        headers = {"x-api-key": api_key}
-        files = {"file": open(video_path, "rb")}
-        data = {"engine_id": engine_id}
-
-        upload_url = "https://api.twelvelabs.io/v1.3/videos"
-        headers = {"x-api-key": api_key}
-        files = {"file": open(video_path, "rb")}
-        data = {"engine_id": engine_id}
 
         # Store metadata
         self.data[file_id] = {

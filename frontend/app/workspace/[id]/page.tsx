@@ -100,7 +100,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
             },
             body: JSON.stringify({
                 query: blockText,
-                file_id: fileData?.file_id
+                file_id: resolvedParams.id
             }),
         });
 
