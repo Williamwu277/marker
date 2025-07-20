@@ -12,10 +12,8 @@ interface TextBlock {
 
 interface PageData {
     image: string;
-    pages: {
-        dimensions: [number, number];
-        text_blocks: TextBlock[];
-    };
+    dimensions: [number, number];
+    text_blocks: TextBlock[];
 }
 
 interface FileData {
@@ -220,13 +218,13 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
                                     />
 
                                     {/* Interactive Text Blocks */}
-                                    {currentPageData.pages.text_blocks.map((block, index) => (
+                                    {currentPageData.text_blocks.map((block, index) => (
                                         <div
                                             key={index}
                                             onClick={() => handleBlockClick(index)}
                                             className={`absolute cursor-pointer transition-all duration-200 hover:bg-primary/20 ${clickedBlock === index ? 'bg-primary/50' : 'bg-transparent'
                                                 }`}
-                                            style={getBlockStyle(block.bounding_box, currentPageData.pages.dimensions)}
+                                            style={getBlockStyle(block.bounding_box, currentPageData.dimensions)}
                                             title={block.text}
                                         />
                                     ))}
@@ -244,7 +242,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
                         </h3>
 
                         <div className="space-y-4">
-                            {currentPageData.pages.text_blocks.map((block, index) => (
+                            {currentPageData.text_blocks.map((block, index) => (
                                 <div
                                     key={index}
                                     className={`p-3 rounded-lg border cursor-pointer transition-all ${clickedBlock === index}

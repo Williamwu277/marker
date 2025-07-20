@@ -35,15 +35,13 @@ class Parser:
                 "pages": [
                     {
                         "image": "base64_encoded_image",
-                        "pages": {
-                            "text_blocks": [
-                                {
-                                    "bounding_box": [(x, y), (x, y), (x, y), (x, y)],
-                                    "text": "text"
-                                }
-                            ],
-                            "dimensions": (width, height)
-                        }
+                        "dimensions": (width, height),
+                        "text_blocks": [
+                            {
+                                "bounding_box": [(x, y), (x, y), (x, y), (x, y)],
+                                "text": "text"
+                            }
+                        ],
                     }
                 ]
             }
@@ -151,10 +149,8 @@ class Parser:
             print(f"Dimensions: {width}x{height}")
             self.data[file_id]["pages"].append({
                 "image": base64.b64encode(img_byte_arr.getvalue()).decode('utf-8'),
-                "pages": {
-                    "dimensions": (width, height),
-                    "text_blocks": []
-                }
+                "dimensions": (width, height),
+                "text_blocks": []
             })
             for block_num, block in enumerate(filtered_blocks, start=1):
 
@@ -163,7 +159,7 @@ class Parser:
                 print(f" Bounding box: {block['verticies']}")
                 print(f" Text: {block['text']}\n")
 
-                self.data[file_id]["pages"][-1]["pages"]["text_blocks"].append({
+                self.data[file_id]["pages"][-1]["text_blocks"].append({
                     "bounding_box": block["verticies"],
                     "text": block["text"]
                 })
