@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface TextBlock {
     bounding_box: [number, number][];
@@ -46,7 +47,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
     const [fileData, setFileData] = useState<FileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [clickedBlocks, setClickedBlocks] = useState<Set<number>>(new Set());
+    const [clickedBlock, setClickedBlock] = useState<number>(-1);
     const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null);
     const resolvedParams = use(params);
 
@@ -86,15 +87,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
     };
 
     const handleBlockClick = (blockIndex: number) => {
-        setClickedBlocks(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(blockIndex)) {
-                newSet.delete(blockIndex);
-            } else {
-                newSet.add(blockIndex);
-            }
-            return newSet;
-        });
+        setClickedBlock(blockIndex);
     };
 
     // Calculate relative positions for the interactive elements
@@ -105,10 +98,10 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
         const xCoords = boundingBox.map(point => point[0]);
         const yCoords = boundingBox.map(point => point[1]);
 
-        const minX = Math.min(...xCoords);
-        const maxX = Math.max(...xCoords);
-        const minY = Math.min(...yCoords);
-        const maxY = Math.max(...yCoords);
+        const minX = Math.min(...xCoords) - 10;
+        const maxX = Math.max(...xCoords) + 10;
+        const minY = Math.min(...yCoords) - 10;
+        const maxY = Math.max(...yCoords) + 10;
 
         // Convert to percentages for responsive positioning
         const left = (minX / originalWidth) * 100;
@@ -122,6 +115,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
             top: `${top}%`,
             width: `${blockWidth}%`,
             height: `${blockHeight}%`,
+            borderRadius: '10px',
         };
     };
 
@@ -159,21 +153,24 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
             {/* Header */}
             <header className="bg-white border-b border-primary/20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
+                    <div className="flex justify-between items-center h-20">
                         <div className="flex items-center space-x-4">
-                            <Link href="/dashboard" className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors">
-                                <span>←</span>
-                                <span>Back to Dashboard</span>
-                            </Link>
+                            <Image
+                                src="/marker-logo-transparent.png"
+                                alt="Marker Logo"
+                                width={200}
+                                height={200}
+                                className="w-40 h-40"
+                            />
                         </div>
                         <div className="flex items-center space-x-4">
                             <h1 className="text-lg font-semibold text-foreground">{fileData.file_name}</h1>
-                            <div className="text-sm text-foreground/60">Page {currentPage + 1} of {totalPages}</div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <button className="bg-primary/10 text-primary px-3 py-1 rounded text-sm hover:bg-primary/20 transition-colors">
-                                Download PDF
-                            </button>
+                            <Link href="/dashboard" className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors">
+                                <span>Back to Dashboard</span>
+                                <span>→</span>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -227,7 +224,7 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
                                         <div
                                             key={index}
                                             onClick={() => handleBlockClick(index)}
-                                            className={`absolute cursor-pointer transition-all duration-200 hover:bg-red-200/30 ${clickedBlocks.has(index) ? 'bg-red-500/50' : 'bg-transparent'
+                                            className={`absolute cursor-pointer transition-all duration-200 hover:bg-primary/20 ${clickedBlock === index ? 'bg-primary/50' : 'bg-transparent'
                                                 }`}
                                             style={getBlockStyle(block.bounding_box, currentPageData.pages.dimensions)}
                                             title={block.text}
@@ -240,24 +237,24 @@ export default function Workspace({ params }: { params: Promise<{ id: string }> 
                 </div>
 
                 {/* Related Content Sidebar */}
-                <div className="w-80 bg-white border-l border-primary/20 overflow-auto">
+                <div className="w-100 bg-white border-l border-primary/20 overflow-auto">
                     <div className="p-6">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
-                            Text Blocks
+                            Links
                         </h3>
 
                         <div className="space-y-4">
                             {currentPageData.pages.text_blocks.map((block, index) => (
                                 <div
                                     key={index}
-                                    className={`p-3 rounded-lg border cursor-pointer transition-all ${clickedBlocks.has(index)
+                                    className={`p-3 rounded-lg border cursor-pointer transition-all ${clickedBlock === index}
                                             ? 'border-red-500 bg-red-50'
                                             : 'border-primary/20 hover:border-primary/40'
                                         }`}
                                     onClick={() => handleBlockClick(index)}
                                 >
                                     <div className="flex items-start space-x-2">
-                                        <div className={`w-4 h-4 rounded-full flex-shrink-0 mt-1 ${clickedBlocks.has(index) ? 'bg-red-500' : 'bg-primary/20'
+                                        <div className={`w-4 h-4 rounded-full flex-shrink-0 mt-1 ${clickedBlock === index ? 'bg-red-500' : 'bg-primary/20'
                                             }`}></div>
                                         <div className="flex-1">
                                             <p className="text-sm text-foreground/80 leading-relaxed">

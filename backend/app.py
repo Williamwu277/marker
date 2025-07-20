@@ -2,6 +2,9 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
+from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
+from services.embedding.faiss_longchain_indexing import FAISS_INDEX
+import tempfile
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -17,6 +20,10 @@ def get_file_extension(filename):
 
 def allowed_file(filename):
     return get_file_extension(filename) in ALLOWED_EXTENSIONS
+
+def is_video_file(filename):
+    video_extensions = {'mp4'}
+    return get_file_extension(filename) in video_extensions
 
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
@@ -89,7 +96,7 @@ def get_file():
             'file_id': file_id,
             'file_name': file_data['file_name'],
             'file_type': file_data['file_type'],
-            'size': f'{file_data['size'] / 1024 / 1024} MB',
+            'size': f'{round(file_data['size'] / 1024 / 1024, 2)} MB',
             'uploaded_at': file_data['uploaded_at'],
             'data': file_data['pages']
         }), 200
@@ -113,14 +120,14 @@ def get_all_files():
                 'id': file['id'],
                 'name': file['file_name'],
                 'type': 'video' if file['file_type'] == 'video' else 'pdf' if file['file_type'] == 'pdf' else 'png',
-                'size': f'{file['size'] / 1024 / 1024} MB',
+                'size': f'{round(file['size'] / 1024 / 1024, 2)} MB',
                 'uploadedAt': file['uploaded_at'],
                 'thumbnail': None
             }
             for file in files
         ]
 
-        print(...files)
+        print(*files)
 
         return jsonify({
             'success': True,

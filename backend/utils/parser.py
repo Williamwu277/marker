@@ -9,6 +9,7 @@ from google.cloud import vision
 from pdf2image import convert_from_bytes, convert_from_path
 from dotenv import load_dotenv
 from PIL import Image
+from .gemini_client import GeminiClient
 
 load_dotenv(override=True)
 
@@ -21,6 +22,7 @@ class Parser:
             os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         )
         self.client = vision.ImageAnnotatorClient(credentials=credentials)
+        self.gClient = GeminiClient()
         
         '''
         self.data = {
@@ -124,7 +126,27 @@ class Parser:
             response = self.client.document_text_detection(image=gvision_image)
             results = response.full_text_annotation
 
-            # for each block
+            # prepare the blocks for gemini to filter
+            blocks = []
+            for block in results.pages[0].blocks:
+                # vertices
+                vertices = [(v.x, v.y) for v in block.bounding_box.vertices]
+                # text
+                block_text = ""
+                for paragraph in block.paragraphs:
+                    for word in paragraph.words:
+                        word_text = ''.join([symbol.text for symbol in word.symbols])
+                        block_text += word_text + " "
+                block_text = block_text.strip()
+                blocks.append({
+                    "verticies": vertices,
+                    "text": block_text
+                })
+            
+            # allow gemini to filter the blocks for questions
+            filtered_blocks = self.gClient.filterQuestions(blocks)
+
+            # for each block, add it to the data
             print(f"\n--- Page {i} ---")
             print(f"Dimensions: {width}x{height}")
             self.data[file_id]["pages"].append({
@@ -134,29 +156,16 @@ class Parser:
                     "text_blocks": []
                 }
             })
-            for block_num, block in enumerate(results.pages[0].blocks, start=1):
-                vertices = [(v.x, v.y) for v in block.bounding_box.vertices]
-
-                # group the text by block
-                block_text = ""
-                for paragraph in block.paragraphs:
-                    for word in paragraph.words:
-                        word_text = ''.join([symbol.text for symbol in word.symbols])
-                        block_text += word_text + " "
-                block_text = block_text.strip()
-
-                # insert heuristics or gemini to determine if the block is useful
-                if len(block_text) < 30:
-                    continue
+            for block_num, block in enumerate(filtered_blocks, start=1):
 
                 # print data for debugging
                 print(f"Block {block_num}:")
-                print(f" Bounding box: {vertices}")
-                print(f" Text: {block_text}\n")
+                print(f" Bounding box: {block['verticies']}")
+                print(f" Text: {block['text']}\n")
 
                 self.data[file_id]["pages"][-1]["pages"]["text_blocks"].append({
-                    "bounding_box": vertices,
-                    "text": block_text
+                    "bounding_box": block["verticies"],
+                    "text": block["text"]
                 })
         
         return file_id

@@ -63,5 +63,41 @@ class GeminiClient:
         contents = prompt_template.format(topic=topic, context=context)
         initial_response = self.generate_content(contents)
         # Validate and clean XML with OpenAI
+<<<<<<< Updated upstream
         validated_xml = self.validate_xml(initial_response, "questions") 
         return validated_xml
+=======
+        validated_xml = self.validate_xml(initial_response) 
+        return validated_xml
+    
+    def filterQuestions(self, blocks: list[dict]) -> list[dict]:
+        block_string = "\n".join([block["text"].replace("\n", " ") for block in blocks])
+        prompt = f'''
+        You are a helpful assistant that filters through a list of blocks of text and returns
+        TRUE for the blocks that are most likely to be homework/test/assignment questions and FALSE otherwise.
+        The input is a list of blocks of text, one being on each line. The output for EACH line is either TRUE 
+        or FALSE depending on whether or not the block is a homework/test/assignment question.
+        Do NOT output anything irrelevant.
+
+        Example input:
+        Calculate the area of the triangle with sides 3, 4, and 5.
+        McDonalds is a fast food restaurant that sells big macs.
+        Example output:
+        TRUE
+        FALSE
+
+        Input:
+        {block_string}
+        Output:
+        '''
+        preliminary_response = self.generate_content(prompt)
+        print("GEMINI RESPONSE:\n", preliminary_response, sep="")
+        response = preliminary_response.split('\n')
+        filtered_blocks = []
+        for i in range(len(blocks)):
+            if i >= len(response) or response[i] != "FALSE":
+                filtered_blocks.append(blocks[i])
+        print(*filtered_blocks)
+        return filtered_blocks
+        
+>>>>>>> Stashed changes

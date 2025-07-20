@@ -90,7 +90,7 @@ export default function Dashboard() {
                 id: uploadResult.file_id, // Use the returned file ID
                 name: file.name,
                 type: file.type.includes('video') ? 'video' : file.type.includes('pdf') ? 'pdf' : 'png',
-                size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+                size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
                 uploadedAt: new Date().toISOString().split('T')[0],
                 thumbnail: file.type.includes('video') ? '📹' : '📄'
             };
@@ -164,7 +164,7 @@ export default function Dashboard() {
             <div className="flex min-h-screen">
                 {/* Sidebar */}
                 <aside className="w-64 bg-white border-r border-primary/20 h-screen">
-                    <div className="px-6 pb-6">
+                    <div className="px-6 pb-4">
                         <Image
                             src="/marker-logo-transparent.png"
                             alt="Marker Logo"
@@ -172,7 +172,7 @@ export default function Dashboard() {
                             height={200}
                             className="w-40 h-40"
                         />
-                        <h3 className="text-md font-semibold text-foreground mb-6">Your Library</h3>
+                        <h3 className="text-sm font-semibold text-foreground mb-4">Your Library</h3>
                         <nav className="space-y-2">
                             {[
                                 { id: 'overview', label: 'Overview', icon: '📊' },
@@ -183,7 +183,7 @@ export default function Dashboard() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as ContentType)}
-                                    className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
+                                    className={`w-full flex items-center space-x-3 px-4 py-1 rounded-lg text-sm text-left transition-colors ${activeTab === tab.id
                                         ? 'bg-primary text-white'
                                         : 'text-foreground hover:bg-primary/10'
                                         }`}
@@ -195,9 +195,9 @@ export default function Dashboard() {
                         </nav>
 
                         {/* Upload Section */}
-                        <div className="mt-8 pt-6 border-t border-primary/20">
+                        <div className="mt-4 pt-4 border-t border-primary/20">
                             <h3 className="text-sm font-semibold text-foreground mb-4">Upload Content</h3>
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <label className="block">
                                     <input
                                         type="file"
@@ -219,7 +219,19 @@ export default function Dashboard() {
                                         className="hidden"
                                     />
                                     <div className="bg-secondary/10 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors cursor-pointer text-center">
-                                        📄 Upload Files
+                                        📄 Upload Notes
+                                    </div>
+                                </label>
+                                <label className="block">
+                                    <input
+                                        type="file"
+                                        accept=".pdf, .png"
+                                        multiple
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                    />
+                                    <div className="bg-notebook/50 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors cursor-pointer text-center">
+                                    🏞️ Upload Worksheets
                                     </div>
                                 </label>
                             </div>
@@ -229,10 +241,10 @@ export default function Dashboard() {
                         <div className="mt-8 pt-6 border-t border-primary/20">
                             <Link
                                 href="/"
-                                className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-left transition-colors text-foreground bg-notebook hover:bg-red-50 hover:text-red-600"
+                                className="w-full flex items-center text-md space-x-3 px-4 py-2 rounded-lg text-left transition-colors text-foreground bg-notebook hover:bg-red-50 hover:text-red-600"
                             >
-                                <span className="text-lg">🚪</span>
-                                <span className="font-medium">Logout</span>
+                                <span className="">🚪</span>
+                                <span className="">Logout</span>
                             </Link>
                         </div>
                     </div>
@@ -260,7 +272,7 @@ export default function Dashboard() {
                             {isUploading && (
                                 <div className="flex items-center space-x-2 text-primary">
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
-                                    <span className="text-sm">Uploading...</span>
+                                    <span className="text-md font-semibold">Uploading...</span>
                                 </div>
                             )}
                         </div>
