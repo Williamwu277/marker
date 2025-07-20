@@ -5,7 +5,7 @@ import time
 from langchain.embeddings.base import Embeddings
 
 class TwelveLabsEmbeddings(Embeddings):
-    def __init__(self, model='Marengo-retrieval-2.7'):
+    def __init__(self, model=os.environ.get('TWELVE_LABS_MODEL')):
         self.model_name = model 
         self.api_key = os.environ.get('TWELVE_LABS_API')
         self.client = TwelveLabs(api_key=self.api_key)
@@ -67,7 +67,7 @@ class TwelveLabsEmbeddings(Embeddings):
             }
     
     def embed_text(self, text:str):
-        res = self.client.embed.create(model_name="Marengo-retrieval-2.7", text=text)
+        res = self.client.embed.create(model_name=self.model_name, text=text)
         return res.text_embedding.segments[0].embeddings_float
             
     def embed_query(self, query:str):

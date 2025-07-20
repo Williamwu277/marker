@@ -1,6 +1,7 @@
 import faiss 
 import twelvelabs
 import numpy as np
+import os
 
 from langchain_core.documents import Document
 from langchain_community.docstore.in_memory import InMemoryDocstore
@@ -11,7 +12,7 @@ from chunking import NoteClusterer
 
 class FAISS_INDEX:
     def __init__(self, embedding_length=1024, k=5):
-        self.embeddings_function = TwelveLabsEmbeddings(model='Marengo-retrieval-2.7')
+        self.embeddings_function = TwelveLabsEmbeddings()
         self.embedding_length = embedding_length
         self.faiss_index = faiss.IndexFlatL2(embedding_length)
         self.index_to_docstore_id = {}
@@ -35,16 +36,20 @@ class FAISS_INDEX:
                 "end_time": end_time
             }
         )
+    
+    def get_video_name(self, file_path:str): 
+        return file_path.split('/')[-1]
 
-    def add_video_chunks_to_index(self, segements: list[twelvelabs.models.embed.SegmentEmbedding], video:str):
+    def add_video_chunks_to_index(self, segements: list[twelvelabs.models.embed.SegmentEmbedding], file_path:str):
         try: 
             for i in range(len(segements)):
                 embedding_object = segements[i]
                 start = embedding_object.start_offset_sec
                 end = embedding_object.end_offset_sec
                 embeddings = embedding_object.embeddings_float
+                doc_name = self.get_video_name(file_path=file_path)
 
-                document = self.format_video(start, end, video, i)
+                document = self.format_video(start, end, doc_name, i)
                 self.faiss_index.add(np.array([embeddings], dtype=np.float32))
     
                 doc_id = f'audio_segement_{i}'
@@ -58,24 +63,24 @@ class FAISS_INDEX:
                 "error": e
             }
             
-
-    def add_text_chunks_to_index(self, chunks:list[dict[str]]):
-        c_name = chunks[0]['metadata']['document_name']
+    def add_text_chunks_to_index(self, chunks:list[dict[str]], file_path: str):
+        c_name = self.get_video_name(file_path=file_path)
         ids = [f'{c_name}_chunk_{i}' for i in range(len(chunks))]
         document_chunks = [Document(**chunk) for chunk in chunks]
         self.vector_store.add_documents(documents=document_chunks, ids=ids)
     
-    def search(self, query:str, filter:dict={}):
+    def search(self, query:str, doc_name:str, most_similar:bool=False):
         results = self.vector_store.similarity_search(
             query=query,
             k=self.k_results,
-            filter=filter
+            filter={"document_name": doc_name},
         )
-        
-        # results_sorted = sorted(results, key=lambda x:x[1], reverse=True)
-        return results
 
-    
+        if most_similar:
+            results_sorted = sorted(results, reverse=True)
+            return results_sorted[0]
+        
+        return results
 
 if __name__ == '__main__':
     # use case 
@@ -84,16 +89,21 @@ if __name__ == '__main__':
     # test_index = FAISS_INDEX()
     # embedder = TwelveLabsEmbeddings()
     # video_path = 'backend/services/embedding/test_video/video3523442589.mp4'
+    # doc_name = test_index.get_video_name(file_path=video_path)
+
     # chunk_embeddings = embedder.embed_video(video=video_path)
     # test_index.add_video_chunks_to_index(chunk_embeddings, video_path)
-    # print(test_index.search(query='what design elements are in this'))
+    # print(test_index.search(query='what design elements are in this', doc_name=video_path, most_similar=False))
 
     #### text ####
     text_chunker = NoteClusterer()
     test_index = FAISS_INDEX()
-    chunks = text_chunker.process_pdf(file_path='backend/services/sample_pdf.pdf')
+    file_path = 'backend/services/sample_pdf.pdf'
+    chunks = text_chunker.process_pdf(file_path=file_path)
+
+    doc_name = text_chunker.get_doc_name(file_path=file_path)
     test_index.add_text_chunks_to_index(chunks=chunks)
-    print(test_index.search(query='what awards are mentioned'))
+    print(test_index.search(query='what awards are mentioned'), doc_name)
 
 
 
