@@ -147,7 +147,7 @@ def upload_notes():
         full_text = ""
         for chunk in chunks:
             full_text += chunk['page_text'] + " "
-        faiss_index.add_text_chunks_to_index(chunks=chunks)
+        faiss_index.add_text_chunks_to_index(chunks=chunks, file_path=file_path)
         file_data = file_parser.get_file(file_id)
 
         return jsonify({
