@@ -57,33 +57,33 @@ export default function Dashboard() {
         fetchFileData();
     }, []);
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files) return;
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'video' | 'file') => {
+    const files = event.target.files;
+    if (!files) return;
 
-        setIsUploading(true);
+    setIsUploading(true);
 
-        try {
-            const file = files[0]; // Get the first (and only) file
+    try {
+        const file = files[0];
 
-            // Create FormData for file upload
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('file_name', file.name);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('file_name', file.name);
 
-            // Upload the file
-            const uploadResponse = await fetch('http://127.0.0.1:5099/upload_file', {
-                method: 'POST',
-                body: formData
-            });
+        const uploadUrl = uploadType === 'video' ? 'http://127.0.0.1:5099/upload_video' : 'http://127.0.0.1:5099/upload_file';
 
-            if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json();
-                throw new Error(errorData.error || 'Upload failed');
-            }
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+        });
 
-            const uploadResult = await uploadResponse.json();
-            console.log('Upload successful:', uploadResult);
+        if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            throw new Error(errorData.error || 'Upload failed');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        console.log('Upload successful:', uploadResult);
 
             // Add the file to the content list using the returned ID
             const newFile: ContentItem = {
@@ -95,14 +95,13 @@ export default function Dashboard() {
                 thumbnail: file.type.includes('video') ? '📹' : '📄'
             };
 
-            setContent(prev => [newFile, ...prev]);
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-            setIsUploading(false);
-        }
-    };
+        setContent(prev => [newFile, ...prev]);
+    } catch (error) {
+        alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+        setIsUploading(false);
+    }
+};
 
     const getContentByType = (type: ContentType) => {
         if (type === 'overview') return content;
@@ -203,7 +202,7 @@ export default function Dashboard() {
                                         type="file"
                                         accept="video/*"
                                         multiple
-                                        onChange={handleFileUpload}
+                                        onChange={(e) => handleFileUpload(e, 'video')}
                                         className="hidden"
                                     />
                                     <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm hover:bg-primary/20 transition-colors cursor-pointer text-center">
@@ -215,7 +214,7 @@ export default function Dashboard() {
                                         type="file"
                                         accept=".pdf, .png"
                                         multiple
-                                        onChange={handleFileUpload}
+                                        onChange={(e) => handleFileUpload(e, 'file')}
                                         className="hidden"
                                     />
                                     <div className="bg-secondary/10 text-secondary px-4 py-2 rounded-lg text-sm hover:bg-secondary/20 transition-colors cursor-pointer text-center">
