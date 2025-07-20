@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.parser import Parser
@@ -6,7 +8,8 @@ from services.embedding.chunking import NoteClusterer
 from services.embedding.faiss_longchain_indexing import FAISS_INDEX as FAISSIndexer
 from services.embedding.twelvelabs_embedding import TwelveLabsEmbeddings
 
-
+# Load environment variables
+load_dotenv(override=True)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
